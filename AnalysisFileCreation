@@ -1,0 +1,3 @@
+TFile *f = TFile::Open("myfile.root");
+TTree *t = (TTree*)f->Get("myTree");
+t->MakeClass("MyAnalysis");
