@@ -27,14 +27,32 @@ void AnalysisData23::Loop()
    
    // variable to check how many counts of mass between 2.9 and 3.2 GeV
    int massCount = 0;
- 
+
+   // Create newfile and TTree to store classified data
+   TFile* newfile = new TFile("Classified_data_e_mu_file.root", "RECREATE");
+   TTree* newtree = new TTree("classified_data_e_mu", "classified_data_e_mu"); 
+   
+   // Variables to new Branches
+   int new_track_PixelHits;
+   int new_track_TRTHits;
+   float new_track_PixelEdX;
+   int areElec;
+
+   // Create new Branches
+   newtree->Branch("track_PixelHits", &new_track_PixelHits, "track_PixelHits/I");
+   newtree->Branch("track_TRTHits", &new_track_TRTHits, "track_TRTHits/I");
+   newtree->Branch("track_PixelEdX", &new_track_PixelEdX, "track_PixelEdX/F");
+   newtree->Branch("areElec", &areElec, "areElec/I");   
+
+
    Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if(jentry%100000==0) cout<<"Processing "<<jentry<<" event..."<<endl;
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
-     
+    
+ 
       // Selection logic 
       if(track_n ==  2 && track_charge->at(0) != track_charge->at(1)){
 
@@ -54,8 +72,19 @@ void AnalysisData23::Loop()
                 // Reconstruct the system
                 vSystem = v0 + v1;
 
+   // Logic to check if electrons  
+     if (nElec >= 1) {
+	areElec = 1;
+     } else {
+	areElec = 0;
+     }
                 if(vSystem.Perp() < 0.2 && vSystem.M() > 2.9 && vSystem.M() < 3.2){
-                // Fill Histograms
+		  new_track_PixelHits = track_PixelHits->at(0);
+		  new_track_TRTHits = track_TRTHits->at(0);
+		  new_track_PixelEdX = track_PixeldEdX->at(0);
+		  newtree->Fill();
+
+		// Fill Histograms
                 histEta->Fill(vSystem.Eta());
                 
                 histPhi->Fill(vSystem.Phi());
@@ -70,6 +99,9 @@ void AnalysisData23::Loop()
             }
         }
 }   
+newtree->Write();
+delete newfile;
+
    cout<< "Counts of mass between (2.9; 3.2)GeV: " << massCount <<endl; 
    TCanvas *c1 = new TCanvas("c1", "Histograms", 1200, 400);
    c1->SaveAs("Plots/histAngles.pdf[");
