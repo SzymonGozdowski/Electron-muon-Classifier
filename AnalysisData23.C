@@ -34,16 +34,21 @@ void AnalysisData23::Loop()
    TTree* newtree = new TTree("classified_data_e_mu", "classified_data_e_mu"); 
    
    // Variables to new Branches
-   int new_track_PixelHits;
-   int new_track_TRTHits;
-   float new_track_PixelEdX;
+   vector<int>* new_track_PixelHits = 0;
+   vector<int>* new_track_TRTHits = 0;
+   vector<float>* new_track_PixelEdX = 0;
    int areElec;
    int areMu;
 
+// Initialize the pointers to new objects
+new_track_PixelHits = new std::vector<int>();
+new_track_TRTHits = new std::vector<int>();
+new_track_PixelEdX = new std::vector<float>();
+
    // Create new Branches
-   newtree->Branch("track_PixelHits", &new_track_PixelHits, "track_PixelHits/I");
-   newtree->Branch("track_TRTHits", &new_track_TRTHits, "track_TRTHits/I");
-   newtree->Branch("track_PixelEdX", &new_track_PixelEdX, "track_PixelEdX/F");
+   newtree->Branch("track_PixelHits", &new_track_PixelHits);
+   newtree->Branch("track_TRTHits", &new_track_TRTHits);
+   newtree->Branch("track_PixelEdX", &new_track_PixelEdX);
    newtree->Branch("areElec", &areElec, "areElec/I");   
    newtree->Branch("areMu", &areMu, "areMu/I");   
 
@@ -79,7 +84,7 @@ void AnalysisData23::Loop()
 		// Set Vectors as electrons
                 v0.SetPtEtaPhiM(track_pt->at(0), track_eta->at(0), track_phi->at(0), elecMass);
                 v1.SetPtEtaPhiM(track_pt->at(1), track_eta->at(1), track_phi->at(1), elecMass);
-     	    } else if(nMuon >=1){
+     	    } else {
 		areElec = 0;
                 areMu = 1;
 		isSignal = true;
@@ -94,10 +99,22 @@ void AnalysisData23::Loop()
 	    if (v0.DeltaR(v1) >= 0.1){
 
                 if(vSystem.Perp() < 0.2 && vSystem.M() > 2.9 && vSystem.M() < 3.2){
-		  new_track_PixelHits = track_PixelHits->at(0);
-		  new_track_TRTHits = track_TRTHits->at(0);
-		  new_track_PixelEdX = track_PixeldEdX->at(0);
-		  newtree->Fill();
+		  
+// 1. CLEAR the vectors from the previous event
+	new_track_PixelHits->clear();
+	new_track_TRTHits->clear();
+	new_track_PixelEdX->clear();
+
+	// 2. FILL the vectors for TRACK 0
+	new_track_PixelHits->push_back(track_PixelHits->at(0));
+	new_track_TRTHits->push_back(track_TRTHits->at(0));
+	new_track_PixelEdX->push_back(track_PixeldEdX->at(0));
+
+	// 3. FILL the vectors for TRACK 1
+	new_track_PixelHits->push_back(track_PixelHits->at(1));
+	new_track_TRTHits->push_back(track_TRTHits->at(1));
+	new_track_PixelEdX->push_back(track_PixeldEdX->at(1));
+		newtree->Fill();
 
 		// Fill Histograms
                 histEta->Fill(vSystem.Eta());
@@ -116,8 +133,14 @@ void AnalysisData23::Loop()
 	   }
         }
 }   
+
 newtree->Write();
 delete newfile;
+
+// Clean up the dynamically allocated vectors
+delete new_track_PixelHits;
+delete new_track_TRTHits;
+delete new_track_PixelEdX;
 
    cout<< "Counts of mass between (2.9; 3.2)GeV: " << massCount <<endl; 
    TCanvas *c1 = new TCanvas("c1", "Histograms", 1200, 400);
