@@ -1,5 +1,5 @@
 #define Analysis_cxx
-#include "Analysis.h"
+#include "MyAnalysis.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -10,6 +10,20 @@ void Analysis::Loop()
 {
 
    if (fChain == 0) return;
+
+   float PixelHits;
+   float PixelTRTHits;
+   float PixeldEdX;
+   bool  IsMuon;
+
+   TFile *file = new TFile("MLData.root", "RECREATE");
+   TTree *MLDataTree = new TTree("MLDataTree", "MLDataTree");
+
+   MLDataTree->Branch("track_PixelHits", &PixelHits, "track_PixelHits/F");
+   MLDataTree->Branch("track_TRTHits", &PixelTRTHits, "track_PixelTRTHits/F");
+   MLDataTree->Branch("track_PixeldEdX", &PixeldEdX, "track_PixeldEdX/F");
+   MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
+
 
    Long64_t nentries = fChain->GetEntriesFast();
    TH1D *Number = new TH1D("Number","Number",15,-0.5,14.5);
@@ -85,6 +99,11 @@ void Analysis::Loop()
                   for(int i=0;i<2;i++)
                   {
                      Muon[i]=t[i];
+                     PixelHits=track_PixelHits->at(i);
+                     PixelTRTHits=track_TRTHits->at(i);
+                     PixeldEdX=track_PixeldEdX->at(i);
+                     IsMuon=1;
+                     MLDataTree->Fill();
                      MuonEnergy->Fill(Muon[i].E());
                      MuonEta->Fill(Muon[i].Eta());
                      MuonPt->Fill(Muon[i].Pt());
@@ -94,18 +113,27 @@ void Analysis::Loop()
                else
                {
                   for(int i=0;i<2;i++) RadEtaPhi[i]=sqrt(pow(t[i].Eta()-ElEta,2)+pow(t[i].Phi()-ElPhi,2));
-
+                  int index;
                   if(RadEtaPhi[0]<RadEtaPhi[1])
                   {
                      if(RadEtaPhi[0]<0.1) Electron=t[1];
-
+                     HRadEtaPhi->Fill(RadEtaPhi[0]);
+                     index=1;
                   }
                   else
                   {
                      if(RadEtaPhi[1]<0.1) Electron=t[0];
+                     HRadEtaPhi->Fill(RadEtaPhi[1]);
+                     index=0;
                   } 
                   if(Electron.E()!=0)
                   {
+                     PixelHits=track_PixelHits->at(index);
+                     PixelTRTHits=track_TRTHits->at(index);
+                     PixeldEdX=track_PixeldEdX->at(index);
+                     IsMuon=0;
+                     MLDataTree->Fill();
+
                      ElectronEnergy->Fill(Electron.E());
                      ElectronEta->Fill(Electron.Eta());
                      ElectronPt->Fill(Electron.Pt());
@@ -119,6 +147,7 @@ void Analysis::Loop()
       
       }     
    }
+
    TCanvas c1;
    
    c1.SaveAs("Plots/test.pdf[");
@@ -167,6 +196,10 @@ void Analysis::Loop()
    c1.SaveAs("Plots/test.pdf");
 
    c1.SaveAs("Plots/test.pdf]");
+   
+   MLDataTree->Write();
+   file->Close();
+
 
 
 }
