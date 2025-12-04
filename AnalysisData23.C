@@ -46,8 +46,8 @@ void AnalysisData23::Loop()
    const float muMass = 0.1057; // GeV
    const float elecMass = 0.00051;
  
-   // variable to check how many counts of mass between 2.9 and 3.2 GeV
-   int massCount = 0;
+   // variable to check how many valid varticles/pairs
+   int signalCount = 0;
    int elecCount = 0;
    int muCount = 0;
 
@@ -56,9 +56,9 @@ void AnalysisData23::Loop()
    TTree* newtree = new TTree("classified_data_e_mu", "classified_data_e_mu"); 
    
    // Variables to new Branches
-   vector<int>* new_track_PixelHits = 0;
-   vector<int>* new_track_TRTHits = 0;
-   vector<float>* new_track_PixelEdX = 0;
+   float new_track_PixelHits = 0;
+   float new_track_TRTHits = 0;
+   float new_track_PixelEdX = 0;
    int areElec;
    // isSignal to check if there are e/mu to reconstruct and not a background
    bool isSignal = false;
@@ -68,10 +68,10 @@ new_track_PixelHits = new std::vector<int>();
 new_track_TRTHits = new std::vector<int>();
 new_track_PixelEdX = new std::vector<float>();
 
-   // Create new Branches
-   newtree->Branch("track_PixelHits", &new_track_PixelHits);
-   newtree->Branch("track_TRTHits", &new_track_TRTHits);
-   newtree->Branch("track_PixelEdX", &new_track_PixelEdX);
+   // Create new Branches, last changes floats instead of vectors
+   newtree->Branch("track_PixelHits", &new_track_PixelHits, "new_track_PixelHits/F");
+   newtree->Branch("track_TRTHits", &new_track_TRTHits, "new_track_TRTHits/F");
+   newtree->Branch("track_PixelEdX", &new_track_PixelEdX, "new_track_PixeldEdX/F");
    newtree->Branch("areElec", &areElec, "areElec/I");   
 
 
@@ -91,8 +91,8 @@ new_track_PixelEdX = new std::vector<float>();
 	   
             // Check Kinematic cuts (e.g. Pt > 0.1, Eta < 2.5) for BOTH tracks
             bool passKinematics = true;
-            if (track_pt->at(0) <= 0.1 || abs(track_eta->at(0)) >= 2) passKinematics = false;
-            if (track_pt->at(1) <= 0.1 || abs(track_eta->at(1)) >= 2) passKinematics = false;
+            if (track_pt->at(0) <= 0.1 || abs(track_eta->at(0)) >= 2.5) passKinematics = false;
+            if (track_pt->at(1) <= 0.1 || abs(track_eta->at(1)) >= 2.5) passKinematics = false;
             
 	    if (passKinematics) {
    	    
@@ -103,9 +103,12 @@ new_track_PixelEdX = new std::vector<float>();
 			v1.SetPtEtaPhiM(track_pt->at(1), track_eta->at(1), track_phi->at(1), elecMass);
 			vSystem = v0 + v1;
 			// DeltaR to check if products are from one collisions
-			if (v0.DeltaR(v1) >= 0.1){
+			// I check delta R between possible electron and reconstructed data from electron-gamma cluster
+			float deltaR =sqrt(pow( (*track_eta)[0] - (*eg_cluster_eta)[0], 2) + 
+                                                        pow( (*track_phi)[0] - (*eg_cluster_phi)[0], 2)); 
+			if (deltaR < 0.5){
 
-			  if(vSystem.Perp() < 0.2 && vSystem.M() < 3){
+			  if(vSystem.Pt() < 0.2 && vSystem.M() < 3){
 				isSignal = true; 
 				areElec = 1;
 				elecCount++;
@@ -125,9 +128,9 @@ new_track_PixelEdX = new std::vector<float>();
 			v1.SetPtEtaPhiM(track_pt->at(1), track_eta->at(1), track_phi->at(1), muMass);
 			vSystem = v0 + v1;
 			// DeltaR to check if products are from one collisions
-			if (v0.DeltaR(v1) >= 0.1){
+			//if (v0.DeltaR(v1) <= 0.5){
 
-			  if(vSystem.Perp() < 0.2 && vSystem.M() > 2.9 && vSystem.M() < 3.2){
+			  if(vSystem.Pt() < 0.2 && vSystem.M() > 2.9 && vSystem.M() < 3.2){
 				isSignal = true; 
 				areElec = 0;
 				muCount++;
@@ -140,10 +143,18 @@ new_track_PixelEdX = new std::vector<float>();
 				muHistMass->Fill(vSystem.M());
 				muHistRapidity->Fill(vSystem.Rapidity());
 			  }
-			}
+			//}
 		    }
 	    }
 	    if (isSignal){
+		// Fill Histograms for everything before cuts 
+		histEta->Fill(vSystem.Eta());
+		
+		histPhi->Fill(vSystem.Phi());
+
+		histPt->Fill(vSystem.Pt());
+		histMass->Fill(vSystem.M());
+		histRapidity->Fill(vSystem.Rapidity());
 		// Fill Histograms for electrons
                 histEta->Fill(vSystem.Eta());
                 
@@ -153,8 +164,8 @@ new_track_PixelEdX = new std::vector<float>();
                 histMass->Fill(vSystem.M());
 		histRapidity->Fill(vSystem.Rapidity());
 
-                // Count specific mass range instances
-                    massCount++;
+                // Count all electrons and muons
+                signalCount++;
 		// 1. CLEAR the vectors from the previous event
 		new_track_PixelHits->clear();
 		new_track_TRTHits->clear();
@@ -183,11 +194,11 @@ delete new_track_PixelHits;
 delete new_track_TRTHits;
 delete new_track_PixelEdX;
 
-   cout<< "Counts of mass between (2.9; 3.2)GeV: " << massCount <<endl;
-   cout << "Number of electrons: " << elecCount << endl; 
-   cout << "Number of muons: " << muCount << endl; 
-   TCanvas *c1 = new TCanvas("c1", "Histograms", 1200, 400);
-   c1->SaveAs("Plots/histAngles.pdf[");
+cout<< "Counts of all valid particles pairs after cuts: " << signalCount <<endl;
+cout << "Number of electrons: " << 2 * elecCount << endl; 
+cout << "Number of muons: " << 2 * muCount << endl; 
+TCanvas *c1 = new TCanvas("c1", "Histograms", 1200, 400);
+c1->SaveAs("Plots/histAngles.pdf[");
 
 histEta->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
@@ -249,40 +260,49 @@ muHistRapidity->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
-// Draw histograms with differentation between e/mu
-TGraphErrors *g1 = new TGraphErrors(eHistPt);
-TGraphErrors *g2 = new TGraphErrors(muHistPt);
-TGraphErrors *g3 = new TGraphErrors(histPt);
+// J/Psi Pt difference between e/mu 
+eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
+muHistPt->Scale(1.0 / muHistPt->GetEntries());
 
-g1->SetMarkerStyle(20); // Filled Circle
-g1->SetMarkerColor(kBlack);
-
-g2->SetMarkerStyle(21); // Filled Square
-g2->SetMarkerColor(kRed);
-
-g3->SetMarkerStyle(22); // Filled Triangle
-g3->SetMarkerColor(kBlue);
-
-// Draw the first graph with axes ("A")
-g1->Draw("AP E"); 
-
-// Draw subsequent graphs with "P E SAME"
-g2->Draw("P E SAME");
-g3->Draw("P E SAME");
-
+eHistPt->SetLineColor(kBlue);
+muHistPt->SetLineColor(kMagenta);
+muHistPt->Draw("HIST");
+eHistPt->Draw("HIST SAME");
 // 4. Create and Populate the Legend
 TLegend *legend = new TLegend(0.7, 0.7, 0.95, 0.9);
 legend->SetBorderSize(0);
 legend->SetFillStyle(0);
 legend->SetTextSize(0.035);
 // The option "p" is sufficient to show the marker style in the legend
-legend->AddEntry(g1, "Electrons Pt", "p"); 
-legend->AddEntry(g2, "Muons Pt", "p");
-//diffHistPt->Draw();
+legend->AddEntry(eHistPt, "Electrons J/Psi Pt", "l"); 
+legend->AddEntry(muHistPt, "Muons J/Psi Pt", "l");
 c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
+diffHistPt->Draw();
+legend->Draw();
+c1->SaveAs("Plots/histAngles.pdf");
+legend->Clear();
+c1->Clear();
 
-diffHistMass->Draw();
+// J/Psi mass difference between e/mu 
+eHistPt->Scale(1.0 / eHistMass->GetEntries()); // Normalize 
+muHistPt->Scale(1.0 / muHistMass->GetEntries());
+
+eHistMass->SetLineColor(kBlue);
+muHistMass->SetLineColor(kMagenta);
+muHistMass->Draw("HIST");
+eHistMass->Draw("HIST SAME");
+// 4. Create and Populate the Legend
+/*
+TLegend *legend = new TLegend(0.7, 0.7, 0.95, 0.9);
+legend->SetBorderSize(0);
+legend->SetFillStyle(0);
+legend->SetTextSize(0.035);
+*/
+// The option "p" is sufficient to show the marker style in the legend
+legend->AddEntry(eHistMass, "Electrons J/Psi Mass", "l"); 
+legend->AddEntry(muHistMass, "Muons J/Psi Mass", "l");
+legend->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
