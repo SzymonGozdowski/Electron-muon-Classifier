@@ -58,22 +58,18 @@ void AnalysisData23::Loop()
    // Variables to new Branches
    float new_track_PixelHits = 0;
    float new_track_TRTHits = 0;
-   float new_track_PixelEdX = 0;
+   float new_track_PixeldEdX = 0;
+   float new_track_SCTHits = 0;
    int areElec;
    // isSignal to check if there are e/mu to reconstruct and not a background
    bool isSignal = false;
 
-// Initialize the pointers to new objects
-new_track_PixelHits = new std::vector<int>();
-new_track_TRTHits = new std::vector<int>();
-new_track_PixelEdX = new std::vector<float>();
-
    // Create new Branches, last changes floats instead of vectors
    newtree->Branch("track_PixelHits", &new_track_PixelHits, "new_track_PixelHits/F");
    newtree->Branch("track_TRTHits", &new_track_TRTHits, "new_track_TRTHits/F");
-   newtree->Branch("track_PixelEdX", &new_track_PixelEdX, "new_track_PixeldEdX/F");
+   newtree->Branch("track_PixeldEdX", &new_track_PixeldEdX, "new_track_PixeldEdX/F");
+   newtree->Branch("track_SCTHits", &new_track_SCTHits, "new_track_SCTHits/F");
    newtree->Branch("areElec", &areElec, "areElec/I");   
-
 
    Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -120,7 +116,14 @@ new_track_PixelEdX = new std::vector<float>();
 				eHistPt->Fill(vSystem.Pt());
 				eHistMass->Fill(vSystem.M());
 				eHistRapidity->Fill(vSystem.Rapidity());
-			  }
+				// Fill branches in new TTree, but only to unmatched electron(hipotheses)
+				// to avoid bias
+				new_track_PixelHits = track_PixelHits->at(1);
+				new_track_TRTHits = track_TRTHits->at(1);
+				new_track_PixeldEdX = track_PixeldEdX->at(1);
+				new_track_SCTHits = track_SCTHits->at(1);
+				newtree->Fill();
+			   }
 			}
 		    } else {
 			// Set Vectors
@@ -142,6 +145,13 @@ new_track_PixelEdX = new std::vector<float>();
 				muHistPt->Fill(vSystem.Pt());
 				muHistMass->Fill(vSystem.M());
 				muHistRapidity->Fill(vSystem.Rapidity());
+				
+				for(int i=0; i<2; i++){
+					new_track_PixelHits = track_PixelHits->at(i);
+					new_track_TRTHits = track_TRTHits->at(i);
+					new_track_PixeldEdX = track_PixeldEdX->at(i);
+					newtree->Fill();	
+				}	
 			  }
 			//}
 		    }
@@ -166,21 +176,6 @@ new_track_PixelEdX = new std::vector<float>();
 
                 // Count all electrons and muons
                 signalCount++;
-		// 1. CLEAR the vectors from the previous event
-		new_track_PixelHits->clear();
-		new_track_TRTHits->clear();
-		new_track_PixelEdX->clear();
-
-		// 2. FILL the vectors for TRACK 0
-		new_track_PixelHits->push_back(track_PixelHits->at(0));
-		new_track_TRTHits->push_back(track_TRTHits->at(0));
-		new_track_PixelEdX->push_back(track_PixeldEdX->at(0));
-
-		// 3. FILL the vectors for TRACK 1
-		new_track_PixelHits->push_back(track_PixelHits->at(1));
-		new_track_TRTHits->push_back(track_TRTHits->at(1));
-		new_track_PixelEdX->push_back(track_PixeldEdX->at(1));
-		newtree->Fill();
 	        }
 
 	}
@@ -189,13 +184,9 @@ new_track_PixelEdX = new std::vector<float>();
 newtree->Write();
 delete newfile;
 
-// Clean up the dynamically allocated vectors
-delete new_track_PixelHits;
-delete new_track_TRTHits;
-delete new_track_PixelEdX;
 
 cout<< "Counts of all valid particles pairs after cuts: " << signalCount <<endl;
-cout << "Number of electrons: " << 2 * elecCount << endl; 
+cout << "Number of electrons to new TTree: " << elecCount << endl; 
 cout << "Number of muons: " << 2 * muCount << endl; 
 TCanvas *c1 = new TCanvas("c1", "Histograms", 1200, 400);
 c1->SaveAs("Plots/histAngles.pdf[");
@@ -276,17 +267,14 @@ legend->SetTextSize(0.035);
 // The option "p" is sufficient to show the marker style in the legend
 legend->AddEntry(eHistPt, "Electrons J/Psi Pt", "l"); 
 legend->AddEntry(muHistPt, "Muons J/Psi Pt", "l");
-c1->SaveAs("Plots/histAngles.pdf");
-c1->Clear();
-diffHistPt->Draw();
 legend->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
 legend->Clear();
 c1->Clear();
 
-// J/Psi mass difference between e/mu 
-eHistPt->Scale(1.0 / eHistMass->GetEntries()); // Normalize 
-muHistPt->Scale(1.0 / muHistMass->GetEntries());
+// J/Psi Pt difference between e/mu 
+eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
+muHistPt->Scale(1.0 / muHistPt->GetEntries());
 
 eHistMass->SetLineColor(kBlue);
 muHistMass->SetLineColor(kMagenta);
@@ -306,8 +294,6 @@ legend->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
-diffHistRapidity->Draw();
-c1->SaveAs("Plots/histAngles.pdf");
 c1->SaveAs("Plots/histAngles.pdf]");
 c1->Clear();
 c1->Close();
