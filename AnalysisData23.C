@@ -8,6 +8,11 @@
 
 using namespace std;
 
+float deltaR(float eta1, float eta2, float phi1, float phi2){
+	return sqrt(pow( eta2 - eta1, 2) + 
+            pow( TMath::ACos(TMath::Cos(phi2)) - TMath::ACos(TMath::Cos(phi1)), 2)); 
+}
+
 void AnalysisData23::Loop()
 {
 
@@ -28,6 +33,8 @@ void AnalysisData23::Loop()
    TH1F *eHistPt = new TH1F("eHistPt", "eHistPt", 100, 0.1, 2); 
    TH1F *eHistMass = new TH1F("eHistMass", "eHistMass", 100, 1, 5);
    TH1F *eHistRapidity = new TH1F("eHistRapidity", "eHistRapidity", 100, -3, 3);
+   TH1F *eHistTopoClusterN = new TH1F("eHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 10); 
+   TH1F *eHistF = new TH1F("eHistF", "Topocluster Pt / track Pt", 100, 0, 10); 
    
    // Initialise histograms for muons
 
@@ -36,12 +43,10 @@ void AnalysisData23::Loop()
    TH1F *muHistPt = new TH1F("muHistPt", "muHistPt", 100, 0.1, 2); 
    TH1F *muHistMass = new TH1F("muHistMass", "muHistMass", 100, 1, 5);
    TH1F *muHistRapidity = new TH1F("muHistRapidity", "muHistRapidity", 100, -3, 3);
+   TH1F *muHistTopoClusterN = new TH1F("muHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 10); 
+   TH1F *muHistF = new TH1F("muHistF", "Topocluster Pt / track Pt", 100, 0, 10); 
    
-   // Initialise histograms for whole system, with differentation e/mu 
-   TH1F *diffHistPt = new TH1F("diffHistPt", "diffHistPt", 100, 0.1, 2); 
-   TH1F *diffHistMass = new TH1F("diffHistMass", "diffHistMass", 100, 1, 5);
-   TH1F *diffHistRapidity = new TH1F("diffHistRapidity", "diffHistRapidity", 100, -3, 3);
-
+// topo_cluster_pass_cut typ C++: vector<bool>
    // Variable to store muon mass
    const float muMass = 0.1057; // GeV
    const float elecMass = 0.00051;
@@ -61,6 +66,8 @@ void AnalysisData23::Loop()
    float new_track_PixeldEdX = 0;
    float new_track_SCTHits = 0;
    int areElec;
+   float f=0;
+   float new_topo_cluster_EM_prob=0;
    // isSignal to check if there are e/mu to reconstruct and not a background
    bool isSignal = false;
 
@@ -70,6 +77,8 @@ void AnalysisData23::Loop()
    newtree->Branch("track_PixeldEdX", &new_track_PixeldEdX, "new_track_PixeldEdX/F");
    newtree->Branch("track_SCTHits", &new_track_SCTHits, "new_track_SCTHits/F");
    newtree->Branch("areElec", &areElec, "areElec/I");   
+   newtree->Branch("f", &f, "f/F");   
+   newtree->Branch("topo_cluster_EM_prob", &new_topo_cluster_EM_prob, "new_topo_cluster_EM_prob/F");   
 
    Long64_t nbytes = 0, nb = 0;
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
@@ -100,9 +109,8 @@ void AnalysisData23::Loop()
 			vSystem = v0 + v1;
 			// DeltaR to check if products are from one collisions
 			// I check delta R between possible electron and reconstructed data from electron-gamma cluster
-			float deltaR =sqrt(pow( (*track_eta)[0] - (*eg_cluster_eta)[0], 2) + 
-                                                        pow( (*track_phi)[0] - (*eg_cluster_phi)[0], 2)); 
-			if (deltaR < 0.5){
+			float deltaR_eg_cluster = deltaR((*track_eta)[0], (*eg_cluster_eta)[0], (*track_phi)[0], (*eg_cluster_phi)[0]); 
+			if (deltaR_eg_cluster < 0.5){
 
 			  if(vSystem.Pt() < 0.2 && vSystem.M() < 3){
 				isSignal = true; 
@@ -122,7 +130,26 @@ void AnalysisData23::Loop()
 				new_track_TRTHits = track_TRTHits->at(1);
 				new_track_PixeldEdX = track_PixeldEdX->at(1);
 				new_track_SCTHits = track_SCTHits->at(1);
-				newtree->Fill();
+				
+				//section for topoclusters
+				int i_topo_cl_max = 0;
+				int topo_cluster_pass_sig_cut_n = 0;
+				for(int i=0; i<topoclus_n; i++){
+					float deltaR_topo_cluster_track = deltaR((*track_eta)[1], (*topo_cluster_eta)[1], (*track_phi)[1], (*topo_cluster_phi)[1]); 
+					if(topo_cluster_pass_sig_cut && deltaR_topo_cluster_track < 0.5){
+						// set first valid topocluster index
+						if (i_topo_cl_max == 0) i_topo_cl_max = i;
+						topo_cluster_pass_sig_cut_n++; 
+						if(topo_cluster_pt->at(i) > topo_cluster_pt->at(i_topo_cl_max) ){
+							i_topo_cl_max = i;
+						} 
+					}
+				}
+				f = topo_cluster_pt->at(i_topo_cl_max) / track_pt->at(1);	
+				new_topo_cluster_EM_prob = topo_cluster_EM_prob->at(1);
+				
+				eHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
+				newtree->Fill();	
 			   }
 			}
 		    } else {
@@ -145,11 +172,30 @@ void AnalysisData23::Loop()
 				muHistPt->Fill(vSystem.Pt());
 				muHistMass->Fill(vSystem.M());
 				muHistRapidity->Fill(vSystem.Rapidity());
-				
-				for(int i=0; i<2; i++){
-					new_track_PixelHits = track_PixelHits->at(i);
-					new_track_TRTHits = track_TRTHits->at(i);
-					new_track_PixeldEdX = track_PixeldEdX->at(i);
+			 		
+				// Section for topo_clusters
+				int i_topo_cl_max = 0;
+				int topo_cluster_pass_sig_cut_n = 0;
+				for(int x=0; x<2; x++){
+					new_track_PixelHits = track_PixelHits->at(x);
+					new_track_TRTHits = track_TRTHits->at(x);
+					new_track_PixeldEdX = track_PixeldEdX->at(x);
+					for(int i=0; i<topoclus_n; i++){
+						float deltaR_topo_cluster_track = deltaR((*track_eta)[x], (*topo_cluster_eta)[x], (*track_phi)[x], (*topo_cluster_phi)[x]); 
+						if(topo_cluster_pass_sig_cut && deltaR_topo_cluster_track < 0.5){
+							// set first valid topocluster index
+							if (i_topo_cl_max == 0) i_topo_cl_max = i;
+							topo_cluster_pass_sig_cut_n++; 
+							if(topo_cluster_pt->at(i) > topo_cluster_pt->at(i_topo_cl_max) ){
+								i_topo_cl_max = i;
+							} 
+						}
+					}
+					f = topo_cluster_pt->at(i_topo_cl_max) / track_pt->at(x);	
+					new_topo_cluster_EM_prob = topo_cluster_EM_prob->at(x);
+					newtree->Fill();
+					
+					muHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
 					newtree->Fill();	
 				}	
 			  }
@@ -177,6 +223,7 @@ void AnalysisData23::Loop()
                 // Count all electrons and muons
                 signalCount++;
 	        }
+
 
 	}
 }   
@@ -252,8 +299,8 @@ c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
 // J/Psi Pt difference between e/mu 
-eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
-muHistPt->Scale(1.0 / muHistPt->GetEntries());
+//eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
+//muHistPt->Scale(1.0 / muHistPt->GetEntries());
 
 eHistPt->SetLineColor(kBlue);
 muHistPt->SetLineColor(kMagenta);
@@ -280,13 +327,6 @@ eHistMass->SetLineColor(kBlue);
 muHistMass->SetLineColor(kMagenta);
 muHistMass->Draw("HIST");
 eHistMass->Draw("HIST SAME");
-// 4. Create and Populate the Legend
-/*
-TLegend *legend = new TLegend(0.7, 0.7, 0.95, 0.9);
-legend->SetBorderSize(0);
-legend->SetFillStyle(0);
-legend->SetTextSize(0.035);
-*/
 // The option "p" is sufficient to show the marker style in the legend
 legend->AddEntry(eHistMass, "Electrons J/Psi Mass", "l"); 
 legend->AddEntry(muHistMass, "Muons J/Psi Mass", "l");
@@ -294,6 +334,21 @@ legend->Draw();
 c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
+
+eHistTopoClusterN->SetLineColor(kBlue);
+muHistTopoClusterN->SetLineColor(kMagenta);
+eHistTopoClusterN->Scale(1.0 / eHistTopoClusterN->GetEntries()); // Normalize 
+muHistTopoClusterN->Scale(1.0 / muHistTopoClusterN->GetEntries());
+muHistTopoClusterN->Draw("HIST");
+eHistTopoClusterN->Draw("HIST SAME");
+legend->Clear();
+// The option "p" is sufficient to show the marker style in the legend
+legend->AddEntry(eHistTopoClusterN, "Electrons", "l"); 
+legend->AddEntry(muHistTopoClusterN, "Muons", "l");
+legend->Draw();
+c1->SaveAs("Plots/histAngles.pdf");
+legend->Clear();
+c1->Clear();
 c1->SaveAs("Plots/histAngles.pdf]");
 c1->Clear();
 c1->Close();
