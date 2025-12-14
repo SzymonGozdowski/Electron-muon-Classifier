@@ -33,8 +33,8 @@ void AnalysisData23::Loop()
    TH1F *eHistPt = new TH1F("eHistPt", "eHistPt", 100, 0.1, 2); 
    TH1F *eHistMass = new TH1F("eHistMass", "eHistMass", 100, 1, 5);
    TH1F *eHistRapidity = new TH1F("eHistRapidity", "eHistRapidity", 100, -3, 3);
-   TH1F *eHistTopoClusterN = new TH1F("eHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 10); 
-   TH1F *eHistF = new TH1F("eHistF", "Topocluster Pt / track Pt", 100, 0, 10); 
+   TH1F *eHistTopoClusterN = new TH1F("eHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 20); 
+   TH1F *eHistF = new TH1F("eHistF", "Topocluster Pt / track Pt", 100, 0, 20); 
    
    // Initialise histograms for muons
 
@@ -43,8 +43,8 @@ void AnalysisData23::Loop()
    TH1F *muHistPt = new TH1F("muHistPt", "muHistPt", 100, 0.1, 2); 
    TH1F *muHistMass = new TH1F("muHistMass", "muHistMass", 100, 1, 5);
    TH1F *muHistRapidity = new TH1F("muHistRapidity", "muHistRapidity", 100, -3, 3);
-   TH1F *muHistTopoClusterN = new TH1F("muHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 10); 
-   TH1F *muHistF = new TH1F("muHistF", "Topocluster Pt / track Pt", 100, 0, 10); 
+   TH1F *muHistTopoClusterN = new TH1F("muHistTopoClusterN", "Topocluster N comparisson e/mu", 100, 0, 20); 
+   TH1F *muHistF = new TH1F("muHistF", "Topocluster Pt / track Pt", 100, 0, 20); 
    
 // topo_cluster_pass_cut typ C++: vector<bool>
    // Variable to store muon mass
@@ -126,30 +126,7 @@ void AnalysisData23::Loop()
 				eHistRapidity->Fill(vSystem.Rapidity());
 				// Fill branches in new TTree, but only to unmatched electron(hipotheses)
 				// to avoid bias
-				new_track_PixelHits = track_PixelHits->at(1);
-				new_track_TRTHits = track_TRTHits->at(1);
-				new_track_PixeldEdX = track_PixeldEdX->at(1);
-				new_track_SCTHits = track_SCTHits->at(1);
 				
-				//section for topoclusters
-				int i_topo_cl_max = 0;
-				int topo_cluster_pass_sig_cut_n = 0;
-				for(int i=0; i<topoclus_n; i++){
-					float deltaR_topo_cluster_track = deltaR((*track_eta)[1], (*topo_cluster_eta)[1], (*track_phi)[1], (*topo_cluster_phi)[1]); 
-					if(topo_cluster_pass_sig_cut && deltaR_topo_cluster_track < 0.5){
-						// set first valid topocluster index
-						if (i_topo_cl_max == 0) i_topo_cl_max = i;
-						topo_cluster_pass_sig_cut_n++; 
-						if(topo_cluster_pt->at(i) > topo_cluster_pt->at(i_topo_cl_max) ){
-							i_topo_cl_max = i;
-						} 
-					}
-				}
-				f = topo_cluster_pt->at(i_topo_cl_max) / track_pt->at(1);	
-				new_topo_cluster_EM_prob = topo_cluster_EM_prob->at(1);
-				
-				eHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
-				newtree->Fill();	
 			   }
 			}
 		    } else {
@@ -173,34 +150,9 @@ void AnalysisData23::Loop()
 				muHistMass->Fill(vSystem.M());
 				muHistRapidity->Fill(vSystem.Rapidity());
 			 		
-				// Section for topo_clusters
-				int i_topo_cl_max = 0;
-				int topo_cluster_pass_sig_cut_n = 0;
-				for(int x=0; x<2; x++){
-					new_track_PixelHits = track_PixelHits->at(x);
-					new_track_TRTHits = track_TRTHits->at(x);
-					new_track_PixeldEdX = track_PixeldEdX->at(x);
-					for(int i=0; i<topoclus_n; i++){
-						float deltaR_topo_cluster_track = deltaR((*track_eta)[x], (*topo_cluster_eta)[x], (*track_phi)[x], (*topo_cluster_phi)[x]); 
-						if(topo_cluster_pass_sig_cut && deltaR_topo_cluster_track < 0.5){
-							// set first valid topocluster index
-							if (i_topo_cl_max == 0) i_topo_cl_max = i;
-							topo_cluster_pass_sig_cut_n++; 
-							if(topo_cluster_pt->at(i) > topo_cluster_pt->at(i_topo_cl_max) ){
-								i_topo_cl_max = i;
-							} 
-						}
-					}
-					f = topo_cluster_pt->at(i_topo_cl_max) / track_pt->at(x);	
-					new_topo_cluster_EM_prob = topo_cluster_EM_prob->at(x);
-					newtree->Fill();
-					
-					muHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
-					newtree->Fill();	
-				}	
-			  }
-			//}
+			  }	
 		    }
+		    //}
 	    }
 	    if (isSignal){
 		// Fill Histograms for everything before cuts 
@@ -211,21 +163,44 @@ void AnalysisData23::Loop()
 		histPt->Fill(vSystem.Pt());
 		histMass->Fill(vSystem.M());
 		histRapidity->Fill(vSystem.Rapidity());
-		// Fill Histograms for electrons
-                histEta->Fill(vSystem.Eta());
-                
-                histPhi->Fill(vSystem.Phi());
-
-                histPt->Fill(vSystem.Pt());
-                histMass->Fill(vSystem.M());
-		histRapidity->Fill(vSystem.Rapidity());
 
                 // Count all electrons and muons
                 signalCount++;
-	        }
 
+		int i_topo_cl_max = 0;
+		for(int x=0; x<2; x++){
+			int topo_cluster_pass_sig_cut_n = 0;
+			if (x == 0 && areElec) continue;
+			new_track_PixelHits = track_PixelHits->at(x);
+			new_track_TRTHits = track_TRTHits->at(x);
+			new_track_PixeldEdX = track_PixeldEdX->at(x);
+			new_track_SCTHits = track_SCTHits->at(x);
+			for(int i=0; i<topoclus_n; i++){
+				float deltaR_topo_cluster_track = deltaR((*track_eta)[x], (*topo_cluster_eta)[x], (*track_phi)[x], (*topo_cluster_phi)[x]); 
+				if(topo_cluster_pass_sig_cut && deltaR_topo_cluster_track < 0.5){
+					// set first valid topocluster index
+					if (i_topo_cl_max == 0) i_topo_cl_max = i;
+					topo_cluster_pass_sig_cut_n++; 
+					if(topo_cluster_pt->at(i) > topo_cluster_pt->at(i_topo_cl_max) ){
+						i_topo_cl_max = i;
+					} 
+				}
+			}
+			f = topo_cluster_pt->at(i_topo_cl_max) / track_pt->at(x);	
+			new_topo_cluster_EM_prob = topo_cluster_EM_prob->at(x);
+			if(areElec){ 
+				eHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
+				eHistF->Fill(f);
+			}
+			else{
+				muHistTopoClusterN->Fill(topo_cluster_pass_sig_cut_n);
+				muHistF->Fill(f);
+			}
+			newtree->Fill();	
+		}	
+	    }
 
-	}
+    }
 }   
 
 newtree->Write();
@@ -299,8 +274,8 @@ c1->SaveAs("Plots/histAngles.pdf");
 c1->Clear();
 
 // J/Psi Pt difference between e/mu 
-//eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
-//muHistPt->Scale(1.0 / muHistPt->GetEntries());
+eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
+muHistPt->Scale(1.0 / muHistPt->GetEntries());
 
 eHistPt->SetLineColor(kBlue);
 muHistPt->SetLineColor(kMagenta);
@@ -319,9 +294,9 @@ c1->SaveAs("Plots/histAngles.pdf");
 legend->Clear();
 c1->Clear();
 
-// J/Psi Pt difference between e/mu 
-eHistPt->Scale(1.0 / eHistPt->GetEntries()); // Normalize 
-muHistPt->Scale(1.0 / muHistPt->GetEntries());
+// J/Psi Mass difference between e/mu 
+eHistMass->Scale(1.0 / eHistMass->GetEntries()); // Normalize 
+muHistMass->Scale(1.0 / muHistMass->GetEntries());
 
 eHistMass->SetLineColor(kBlue);
 muHistMass->SetLineColor(kMagenta);
