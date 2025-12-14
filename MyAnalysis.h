@@ -12,6 +12,10 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TMath.h>
+#include "TLorentzVector.h"
+#include <TH2.h>
+
+
 
 // Header file for the classes stored in the TTree if any.
 #include <vector>
@@ -27,6 +31,7 @@ public :
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
    Float_t         MuonMass=0.1056583755;
+   Float_t         ElectronMass=0.00051099895;
    Double_t        pi=TMath::Pi();
    // Declaration of leaf types
    UInt_t          run_number;
@@ -1009,6 +1014,7 @@ public :
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
    virtual void     Loop();
+   virtual void     Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp,TH1D* FVariable, TH1D* EMCal);
    virtual bool     Notify();
    virtual void     Show(Long64_t entry = -1);
 };
