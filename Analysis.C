@@ -3,7 +3,7 @@
 #include <TStyle.h>
 #include <TCanvas.h>
 using namespace std;
-void Analysis::Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp, TH1D* FVarible, TH1D* EMCal)
+void Analysis::Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, float &FVariable, float &EMprop)
 {
    int topo_count=0;
    double pt=5;
@@ -33,8 +33,16 @@ void Analysis::Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp, TH1
    
    if(id!=-1)
    {
-      FVarible->Fill(topo_cluster_pt->at(id)/particle.Perp());
-      EMCal->Fill(topo_cluster_EM_prob->at(id));
+      
+      FVariable=topo_cluster_pt->at(id)/particle.Perp();
+      EMprop=topo_cluster_EM_prob->at(id);
+      FVariableHist->Fill(FVariable);
+      EMCal->Fill(EMprop);
+   }
+   else 
+   {
+      FVariable=-1;
+      EMprop=-1;
    }
 }
 
@@ -47,6 +55,8 @@ void Analysis::Loop()
    float PixelTRTHits;
    float PixeldEdX; 
    float PixelSCTHits; 
+   float FVariable;
+   float EMprop;
    bool  IsMuon;
 
    TFile *file = new TFile("MLData.root", "RECREATE");
@@ -56,6 +66,8 @@ void Analysis::Loop()
    MLDataTree->Branch("track_TRTHits", &PixelTRTHits, "track_PixelTRTHits/F");
    MLDataTree->Branch("track_PixeldEdX", &PixeldEdX, "track_PixeldEdX/F");
    MLDataTree->Branch("track_SCTHits", &PixelSCTHits, "track_PixelSCTHits/F");
+   MLDataTree->Branch("Cal_FVariable", &FVariable, "Cal_FVariable/F");
+   MLDataTree->Branch("Cal_EMprop", &EMprop, "Cal_EMprop/F");
    MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
    Long64_t nentries = fChain->GetEntriesFast();
@@ -176,13 +188,6 @@ void Analysis::Loop()
             
             if(elctroncheck && dipartic.M()<3)
             {
-               PixelHits=track_PixelHits->at(1);
-               PixelTRTHits=track_TRTHits->at(1);
-               PixeldEdX=track_PixeldEdX->at(1);
-               PixelSCTHits=track_SCTHits->at(1);
-               IsMuon=0;
-               MLDataTree->Fill();
-
                H_ElPixeldEdX->Fill(track_PixeldEdX->at(1));
                H_ElPixelHits->Fill(track_PixelHits->at(1));
                H_ElPixelSCTHits->Fill(track_SCTHits->at(1));
@@ -193,7 +198,15 @@ void Analysis::Loop()
                ElectronPt->Fill(Electron.Pt());
                ElectronPhi->Fill(Electron.Phi());
                DiMassEl->Fill(dipartic.M());
-               Topocluster(Electron,CountElec,PerpElec,FElec,EMElec);
+               
+               Topocluster(Electron,CountElec,PerpElec,FElec,EMElec,FVariable, EMprop);
+
+               PixelHits=track_PixelHits->at(1);
+               PixelTRTHits=track_TRTHits->at(1);
+               PixeldEdX=track_PixeldEdX->at(1);
+               PixelSCTHits=track_SCTHits->at(1);
+               IsMuon=0;
+               MLDataTree->Fill();
 
             }
             if(!elctroncheck && dipartic.M()>2.9 )
@@ -201,12 +214,6 @@ void Analysis::Loop()
                for(int i=0;i<2;i++)
                {
                   Muon[i]=t[i];
-                  PixelHits=track_PixelHits->at(i);
-                  PixelTRTHits=track_TRTHits->at(i);
-                  PixeldEdX=track_PixeldEdX->at(i);
-                  PixelSCTHits=track_SCTHits->at(i);
-                  IsMuon=1;
-                  MLDataTree->Fill();
 
                   H_MuPixeldEdX->Fill(track_PixeldEdX->at(i));
                   H_MuPixelHits->Fill(track_PixelHits->at(i));
@@ -217,7 +224,14 @@ void Analysis::Loop()
                   MuonEta->Fill(Muon[i].Eta());
                   MuonPt->Fill(Muon[i].Pt());
                   MuonPhi->Fill(Muon[i].Phi());
-                  Topocluster(Muon[i],CountMuon,PerpMuon,FMuon,EMMuon);
+                  Topocluster(Muon[i],CountMuon,PerpMuon,FMuon,EMMuon, FVariable, EMprop);
+
+                  PixelHits=track_PixelHits->at(i);
+                  PixelTRTHits=track_TRTHits->at(i);
+                  PixeldEdX=track_PixeldEdX->at(i);
+                  PixelSCTHits=track_SCTHits->at(i);
+                  IsMuon=1;
+                  MLDataTree->Fill();
                }
                DiMassMu->Fill(dipartic.M());
             }              
