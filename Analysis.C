@@ -86,12 +86,12 @@ void Analysis::Loop()
    TH1D *EMElec = new TH1D("EMElec","EMElec",40,-0.1,1.1);
    
 
-   TH1D *DiMass = new TH1D("dimass","dimass",50,2.9,3.2);
-   TH1D *DiMassEl = new TH1D("dimassEl","dimassEl",50,1.5,3.9);
-   TH1D *DiMassMu = new TH1D("dimassMu","dimassMu",50,1.5,3.9);
+   TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2.9,3.2);
+   TH1D *DiMassEl = new TH1D("dimassEl","Lepton pair mass",50,1.5,3.9);
+   TH1D *DiMassMu = new TH1D("dimassMu","Lepton pair mass",50,1.5,3.9);
 
-   TH1D *Pt = new TH1D("Pt","Pt",50,0,0.2);
-   TH1D *Rapidity = new TH1D("Rapidity ","Rapidity ",50,-3,3);
+   TH1D *Pt = new TH1D("Pt","Transverse momentum of lepton pair",50,0,0.2);
+   TH1D *Rapidity = new TH1D("Rapidity ","Rapidity of lepton pair",50,-3,3);
 
    TH1D *ElectronEta =new TH1D("ElectronEta","ElectronEta",50,-3,3);
    TH1D *ElectronEnergy =new TH1D("ElectronEnergy","ElectronEnergy",50,1,6);
@@ -238,28 +238,53 @@ void Analysis::Loop()
          }
       }
    }
-
+   gStyle->SetOptStat(000000);
    TCanvas c1;
+   TLegend* leg = new TLegend(0.58, 0.6, 0.85, 0.85);
+    leg->SetBorderSize(0);
+    leg->SetNColumns(1);
+    leg->SetColumnSeparation(0.1);
+    leg->SetEntrySeparation(0.1);
+    leg->SetMargin(0.15);
+    leg->SetTextFont(42);
+    leg->SetTextSize(0.05);
+    leg->AddEntry(H_ElPixelHits,"Electron","l");
+    leg->AddEntry(H_MuPixelHits,"Muon","l");
+   TLegend* leg2 = new TLegend(0.2, 0.6, 0.45, 0.85);
+    leg2->SetBorderSize(0);
+    leg2->SetNColumns(1);
+    leg2->SetColumnSeparation(0.1);
+    leg2->SetEntrySeparation(0.1);
+    leg2->SetMargin(0.15);
+    leg2->SetTextFont(42);
+    leg2->SetTextSize(0.05);
+    leg2->AddEntry(DiMassEl,"Electron","l");
+    leg2->AddEntry(DiMassMu,"Muon","l");
    
    c1.SaveAs("Plots/test.pdf[");
 
    c1.Clear();
+   DiMass->GetXaxis()->SetTitle("M_{ll} [GeV]");
    DiMass->Draw();
    c1.SaveAs("Plots/test.pdf");
 
    c1.Clear();
+   Pt->GetXaxis()->SetTitle("P_{t}^{ll} [GeV]");
    Pt->Draw();
    c1.SaveAs("Plots/test.pdf");
 
    c1.Clear();
+   Rapidity->GetXaxis()->SetTitle("\\eta_{ll} [GeV]");
    Rapidity->Draw();
    c1.SaveAs("Plots/test.pdf");
 
    c1.Clear();
+   DiMassMu->GetXaxis()->SetTitle("M_{ll} [GeV]");
    DiMassEl->SetLineColor(kBlue);
    DiMassMu->SetLineColor(kRed);
    DiMassMu->Draw();
    DiMassEl->Draw("same");
+   leg2->Draw();
    c1.SaveAs("Plots/test.pdf");
 
    c1.Clear();
@@ -292,73 +317,92 @@ void Analysis::Loop()
    c1.Clear();
    c1.Divide(2,2);
    c1.cd(1);
+   H_ElPixelHits->SetTitle("PixelHits");
    H_ElPixelHits->Scale(1./H_ElPixelHits->Integral());
    H_MuPixelHits->Scale(1./H_MuPixelHits->Integral());
    H_ElPixelHits->SetLineColor(kRed);
    H_MuPixelHits->SetLineColor(kBlue);
    H_ElPixelHits->Draw("HIST");
    H_MuPixelHits->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(2);
+   H_ElPixelHits->SetTitle("PixelTRTHits");
    H_ElPixelTRTHits->Scale(1./H_ElPixelTRTHits->Integral());
    H_MuPixelTRTHits->Scale(1./H_MuPixelTRTHits->Integral());
    H_ElPixelTRTHits->SetLineColor(kRed);
    H_MuPixelTRTHits->SetLineColor(kBlue);
    H_ElPixelTRTHits->Draw("HIST");
    H_MuPixelTRTHits->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(3);
+   H_ElPixelHits->SetTitle("PixelSCTHits");
+
    H_ElPixelSCTHits->Scale(1./H_ElPixelSCTHits->Integral());
    H_MuPixelSCTHits->Scale(1./H_MuPixelSCTHits->Integral());
    H_ElPixelSCTHits->SetLineColor(kRed);
    H_MuPixelSCTHits->SetLineColor(kBlue);
    H_ElPixelSCTHits->Draw("HIST");
    H_MuPixelSCTHits->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(4);
+   H_ElPixelHits->SetTitle("PixeldEdX");
    H_ElPixeldEdX->Scale(1./H_ElPixeldEdX->Integral());
    H_MuPixeldEdX->Scale(1./H_MuPixeldEdX->Integral());
    H_ElPixeldEdX->SetLineColor(kRed);
    H_MuPixeldEdX->SetLineColor(kBlue);
    H_ElPixeldEdX->Draw("HIST");
    H_MuPixeldEdX->Draw("HIST SAME");
+   leg->Draw();
 
    c1.SaveAs("Plots/test.pdf");
 
    c1.Clear();
    c1.Divide(2,2);
    c1.cd(1);
+   H_ElPixelHits->SetTitle("Number of topoclusters");
    CountElec->Scale(1./CountElec->Integral());
    CountMuon->Scale(1./CountMuon->Integral());
    CountElec->SetLineColor(kBlue);
    CountMuon->SetLineColor(kRed);
    CountMuon->Draw("HIST");
    CountElec->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(2);
+   PerpElec->SetTitle("Travsersal momentum");
    PerpElec->Scale(1./PerpElec->Integral());
    PerpMuon->Scale(1./PerpMuon->Integral());
    PerpElec->SetLineColor(kBlue);
    PerpMuon->SetLineColor(kRed);
    PerpElec->Draw("HIST");
    PerpMuon->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(3);
+   FElec->SetTitle("F variable");
+
    FElec->Scale(1./FElec->Integral());
    FMuon->Scale(1./FMuon->Integral());
    FElec->SetLineColor(kBlue);
    FMuon->SetLineColor(kRed);
    FMuon->Draw("HIST");
    FElec->Draw("HIST SAME");
+   leg->Draw();
 
    c1.cd(4);
+   EMElec->SetTitle("EMCalorimetr probality");
    EMElec->Scale(1./EMElec->Integral());
    EMMuon->Scale(1./EMMuon->Integral());
    EMElec->SetLineColor(kBlue);
    EMMuon->SetLineColor(kRed);
    EMMuon->Draw("HIST");
    EMElec->Draw("HIST SAME");
+   leg->Draw();
    c1.SaveAs("Plots/test.pdf");
+   
 
    c1.Clear();
    Number->Draw();
