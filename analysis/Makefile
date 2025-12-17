@@ -56,14 +56,15 @@ ifndef OUTPUT
 endif
 	$(BIN_DIR)/$(PROGRAM) $(INPUT) $(OUTPUT)
 
-INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/jpsi_psi2s_extra_variables.root"
-OUTPUT := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists.root"
+#INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/jpsi_psi2s_extra_variables.root"
+INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/data23_2trk_moreTCvars.root"
+OUTPUT := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists_data23.root"
 run:
 	$(BIN_DIR)/$(PROGRAM) $(INPUT) $(OUTPUT)
 
 
-PLOT_INPUT  := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists.root
-PLOT_OUTPUT := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/out_hists.pdf
+PLOT_INPUT  := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists_data23.root
+PLOT_OUTPUT := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/out_hists_data23.pdf
 plot:
 	root -l -b -q "src/plot.C(\"$(PLOT_INPUT)\", \"$(PLOT_OUTPUT)\")"
 

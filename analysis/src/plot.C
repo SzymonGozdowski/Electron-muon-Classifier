@@ -88,6 +88,21 @@ void plot(const char* inputFile, const char* outputPDF){
     TH1D* hist_muon_Pt = GetHist(f, "hist_muon_Pt");
     TH1D* hist_muon_Eta = GetHist(f, "hist_muon_Eta");
     TH1D* hist_muon_Phi = GetHist(f, "hist_muon_Phi");
+    //
+    TH1D* hist_track_PixeldEdX = GetHist(f, "hist_track_PixeldEdX");
+    TH1D* hist_track_PixelHits = GetHist(f, "hist_track_PixelHits");
+    TH1D* hist_track_SCTHits = GetHist(f, "hist_track_SCTHits");
+    TH1D* hist_track_TRTHits = GetHist(f, "hist_track_TRTHits");
+    //
+    TH1D* hist_electron_PixeldEdX = GetHist(f, "hist_electron_PixeldEdX");
+    TH1D* hist_electron_PixelHits = GetHist(f, "hist_electron_PixelHits");
+    TH1D* hist_electron_SCTHits = GetHist(f, "hist_electron_SCTHits");
+    TH1D* hist_electron_TRTHits = GetHist(f, "hist_electron_TRTHits");
+    //
+    TH1D* hist_muon_PixeldEdX = GetHist(f, "hist_muon_PixeldEdX");
+    TH1D* hist_muon_PixelHits = GetHist(f, "hist_muon_PixelHits");
+    TH1D* hist_muon_SCTHits = GetHist(f, "hist_muon_SCTHits");
+    TH1D* hist_muon_TRTHits = GetHist(f, "hist_muon_TRTHits");
 
 
 
@@ -113,6 +128,12 @@ void plot(const char* inputFile, const char* outputPDF){
 
     DrawHist(pdfMiddle, c, hist_track_eta, false);
     DrawHist(pdfMiddle, c, hist_track_eta_cut, false);
+
+    DrawHist(pdfMiddle, c, hist_track_PixeldEdX, false);
+    DrawHist(pdfMiddle, c, hist_track_PixelHits, false);
+    DrawHist(pdfMiddle, c, hist_track_SCTHits, false);
+    DrawHist(pdfMiddle, c, hist_track_TRTHits, false);
+
     //
     DrawHist(pdfMiddle, c, hist_dilepton_inv_mass, false);
     DrawHist(pdfMiddle, c, hist_dilepton_pt, true);
@@ -130,6 +151,13 @@ void plot(const char* inputFile, const char* outputPDF){
     DrawHist(pdfMiddle, c, hist_electron_Eta, false);
     c->cd(4);
     DrawHist(pdfMiddle, c, hist_electron_Phi, false);
+
+    DrawHist(pdfMiddle, c, hist_electron_PixeldEdX, false);
+    DrawHist(pdfMiddle, c, hist_electron_PixelHits, false);
+    DrawHist(pdfMiddle, c, hist_electron_SCTHits, false);
+    DrawHist(pdfMiddle, c, hist_electron_TRTHits, false);
+
+    
     //
     DrawHist(pdfMiddle, c, hist_muon_number, false);
     c->Divide(2, 2);
@@ -141,6 +169,11 @@ void plot(const char* inputFile, const char* outputPDF){
     DrawHist(pdfMiddle, c, hist_muon_Eta, false);
     c->cd(4);
     DrawHist(pdfMiddle, c, hist_muon_Phi, false);
+
+    DrawHist(pdfMiddle, c, hist_muon_PixeldEdX, false);
+    DrawHist(pdfMiddle, c, hist_muon_PixelHits, false);
+    DrawHist(pdfMiddle, c, hist_muon_SCTHits, false);
+    DrawHist(pdfMiddle, c, hist_muon_TRTHits, false);
 
 
     // Zamknij PDF

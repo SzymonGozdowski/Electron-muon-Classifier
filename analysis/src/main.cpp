@@ -1,6 +1,6 @@
 #include "TFile.h"
 #include "TTree.h"
-#include "G2TauTree_analisys.h"
+#include "G2TauTree_data23_analysis.h"
 #include <iostream>
 
 int main(int argc, char** argv) {
@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "[INFO] Initializing G2TauTree_analysis." << std::endl;
-    G2TauTree_analisys analyzer(argv[1], argv[2]);
+    G2TauTree_data23_analysis analyzer(argv[1], argv[2]);
     std::cout << "[INFO] Starting Loop." << std::endl;
     analyzer.Loop();
     std::cout << "[INFO] Loop done." << std::endl;
