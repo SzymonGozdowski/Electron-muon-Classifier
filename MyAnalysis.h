@@ -12,9 +12,9 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TMath.h>
-#include "TLorentzVector.h"
+#include <TLorentzVector.h>
 #include <TH2.h>
-
+#include <TLegend.h>
 
 
 // Header file for the classes stored in the TTree if any.
@@ -1014,7 +1014,8 @@ public :
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
    virtual void     Loop();
-   virtual void     Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp,TH1D* FVariable, TH1D* EMCal);
+   virtual void     Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp,TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist,TH1D* Lambda2Hist,
+      TH1D* RadiusHist, TH1D* TimeHist, float &FVariable, float &EMprop, float &Lambda2, float &Lambda, float &Radius, float &Time);
    virtual bool     Notify();
    virtual void     Show(Long64_t entry = -1);
 };

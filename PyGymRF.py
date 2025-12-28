@@ -13,10 +13,10 @@ chunks = []
 with uproot.open("MLData.root") as f:
     df = f["MLDataTree"].arrays(library="pd") 
 
-X = df[['track_PixelHits', 'track_TRTHits', 'track_SCTHits', 'track_PixeldEdX', 'Cal_FVariable' , 'Cal_EMprop']]  
+X = df[['track_PixelHits', 'track_TRTHits', 'track_SCTHits', 'track_PixeldEdX', 'Cal_FVariable' , 'Cal_EMprop','Cal_Lambda','Cal_Lambda2','Cal_Radius','Cal_Time']]  
 y = df['IsMuon'] 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
@@ -53,7 +53,7 @@ axes[1,0].legend(); axes[1,0].set_title('Predicted vs True')
 
 
 importances = rf.feature_importances_
-features = ['PixelHits', 'TRTHits', 'SCTHits', 'PixeldEdX', 'Cal_FVar', 'Cal_EMprop']
+features = ['PixelHits', 'TRTHits', 'SCTHits', 'PixeldEdX', 'Cal_FVar', 'Cal_EMprop','Cal_Lambda','Cal_Lambda2','Cal_Radius','Cal_Time']
 axes[1,1].bar(features, importances)
 axes[1,1].set_title('Feature Importance'); axes[1,1].tick_params(axis='x', rotation=45)
 

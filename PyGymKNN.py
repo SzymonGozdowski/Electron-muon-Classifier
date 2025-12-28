@@ -13,7 +13,7 @@ chunks = []
 with uproot.open("MLData.root") as f:
     df = f["MLDataTree"].arrays(library="pd")  
 
-X = df[['track_PixelHits', 'track_TRTHits', 'track_SCTHits', 'track_PixeldEdX', 'Cal_FVariable' , 'Cal_EMprop']]  
+X = df[['track_PixelHits', 'track_TRTHits', 'track_SCTHits', 'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop' ,'Cal_Lambda','Cal_Lambda2','Cal_Radius','Cal_Time']]
 y = df['IsMuon'] 
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -52,7 +52,7 @@ axes[1,0].scatter(range(100), y_pred[:100], c='red', alpha=0.6, label='Predicted
 axes[1,0].legend(); axes[1,0].set_title('Predicted vs True')
 
 
-k_range = range(5, 16)
+k_range = range(5, 6)
 scores = []
 for k in k_range:
     knn_k = KNeighborsClassifier(n_neighbors=k)
