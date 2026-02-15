@@ -14,14 +14,16 @@ void Topocluster(TLorentzVector particle,TTreeReaderArray<unsigned int>& TopoClu
        TTreeReaderArray<float>& TopoCluLamda, TTreeReaderArray<float>& TopoCluLamda2, TTreeReaderArray<float>& TopoCluR2, TTreeReaderArray<float>& TopoCluEMProb, TTreeReaderArray<bool>& TopoCluPass,
        TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist, TH1D* Lambda2Hist,   TH1D* RadiusHist, float &FVariable, float &EMprop, float &Lambda2, float &Lambda, float &Radius)
 {
-   // Get topo_cluster Information
+   //========================
+   //Getting Topocluster informtions and searching for matches 
+   //========================
     
     
 
    int topo_count=0;
    double pt=0;
    int id=-1;
-
+   
    for(int topo=0;topo<int(TopoCluNum[0]);topo++)
    {
 
@@ -43,6 +45,10 @@ void Topocluster(TLorentzVector particle,TTreeReaderArray<unsigned int>& TopoClu
       }          
    }
    Count->Fill(topo_count);
+
+   //========================
+   //Saving topocluster data
+   //========================
 
    if(id!=-1)
    {
