@@ -263,8 +263,10 @@ void SecondAnalysis()
                     Response->Fill(prob_ptr[1]);
                 }
                 int lepton=2;
-                if(response[0]<0.65 && response[1]<0.65) lepton=0;
-                if(response[0]>0.65 && response[1]>0.65) lepton=1;
+                //float probcut=0.72;
+                float probcut=0.5;
+                if(response[0]<probcut && response[1]<probcut) lepton=0;
+                if(response[0]>probcut && response[1]>probcut) lepton=1;
                 else diffrentparticle++;
 
                 //========================

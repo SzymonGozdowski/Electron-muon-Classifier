@@ -54,13 +54,7 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 
 print("Traing model on data...")
-rf = RandomForestClassifier(
-    n_estimators=200,
-    max_depth=10,
-    min_samples_split=10,
-    random_state=42,
-    n_jobs=-1
-)
+rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1, class_weight='balanced')
 rf.fit(X_train_scaled, y_train)
 
 
@@ -70,7 +64,7 @@ rf.fit(X_train_scaled, y_train)
 # ========================
 
 reports = {}
-with PdfPages("Plots/RFoutput.pdf") as pdf:
+with PdfPages("Plots/doubleTrainSimulation-testSim.pdf") as pdf:
     
     for eta in range(4):
         eta_name = eta_values[eta]
@@ -144,7 +138,11 @@ with PdfPages("Plots/RFoutput.pdf") as pdf:
 
     # Last page
     fig = plt.figure(figsize=(11, 14))
-    fig.text(0.5, 0.95, "Summary (TEST DATA ONLY)", ha='center', fontsize=18, fontweight='bold')
+    fig.text(
+        0.35, 0.98,
+        "Classification Reports Summary\nTrained: Double TrueData.root | Test: TrueData.root",
+        ha='center', fontsize=18, fontweight='bold'
+    )
     y_pos = 0.90
     for title, report in reports.items():
         fig.text(0.05, y_pos, f"\n{title}", fontsize=12, fontweight='bold', family='monospace')

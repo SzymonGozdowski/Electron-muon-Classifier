@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import precision_recall_curve, auc, average_precision_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -26,6 +27,18 @@ os.makedirs("Plots", exist_ok=True)
 print("Importing training data...")
 with uproot.open("Data/MLFinalDataTrueData.root") as f:
     df_train = f["MLDataTree"].arrays(library="pd")
+
+    
+#========================
+# Importing testing data
+#========================
+print("Importing testing data...")
+with uproot.open("Data/MLDataMCElectron.root") as fe:
+    df_Electron = fe["MLDataTree"].arrays(library="pd")
+    
+with uproot.open("Data/MLDataMCMuon.root") as fm:
+    df_Muon = fm["MLDataTree"].arrays(library="pd")
+df_test = pd.concat([df_Electron, df_Muon], ignore_index=True)
     
 features_list=['track_PixelHits', 'track_TRTHits', 'track_SCTHits',
                         'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
@@ -38,7 +51,7 @@ scaler = StandardScaler()
 X_train_full_scaled = scaler.fit_transform(X_train_full)
 
 print("Traing model on data...")
-rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1)
+rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1,class_weight='balanced')
 rf.fit(X_train_full_scaled, y_train_full)
 
 #========================
@@ -54,16 +67,7 @@ with open("Data/RFMuonElectron.onnx", "wb") as fo:
     fo.write(onnx_model.SerializeToString())
 
 
-#========================
-# Importing testing data
-#========================
-print("Importing testing data...")
-with uproot.open("Data/MLDataMCElectron.root") as fe:
-    df_Electron = fe["MLDataTree"].arrays(library="pd")
-    
-with uproot.open("Data/MLDataMCMuon.root") as fm:
-    df_Muon = fm["MLDataTree"].arrays(library="pd")
-df_test = pd.concat([df_Electron, df_Muon], ignore_index=True)
+
 
 # ========================
 # Generating outputs
@@ -77,7 +81,7 @@ eta_values = {
 reports = {}
 
 
-with PdfPages("Plots/RF_test_output.pdf") as pdf:
+with PdfPages("Plots/doubleTrainSimulation-testMC.pdf") as pdf:
     
     for eta in range(4):
         eta_name = eta_values[eta]
@@ -136,13 +140,7 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
             axes[0, 1].set_title('ROC Curve')
             axes[0, 1].legend()
             axes[0, 1].grid(True, alpha=0.3)
-        else:
-            axes[0, 1].text(
-                0.5, 0.5, "ROC not available\n(non-binary labels)",
-                ha='center', va='center', fontsize=12
-            )
-            axes[0, 1].set_axis_off()
-        
+
         # 3. RF response (Score distribution)
         scores = y_proba[:, 1]
         signal_scores = scores[y_test == 1]
@@ -155,8 +153,7 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
         )
         axes[1, 0].hist(
             signal_scores, bins=bins, density=True, histtype='stepfilled',
-            alpha=0.4, color='orange', label='Muon (MC)', hatch='//'
-        )
+            alpha=0.4, color='orange', label='Muon (MC)', hatch='//')
         axes[1, 0].set_xlabel('RF response')
         axes[1, 0].set_ylabel('(1/N) dN/dx')
         axes[1, 0].set_title('Classifier Response (MC)')
@@ -184,8 +181,8 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
     # Last page
     fig = plt.figure(figsize=(11, 14))
     fig.text(
-        0.5, 0.98,
-        "Classification Reports Summary\nTrained: FULL TrueData.root | Test: MC Samples",
+        0.35, 0.98,
+        "Classification Reports Summary\nTrained: Double TrueData.root | Test: MC Samples",
         ha='center', fontsize=18, fontweight='bold'
     )
     
