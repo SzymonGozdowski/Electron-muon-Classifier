@@ -81,7 +81,7 @@ eta_values = {
 reports = {}
 
 
-with PdfPages("Plots/doubleTrainSimulation-testMC.pdf") as pdf:
+with PdfPages("Plots/RF_test_output.pdf") as pdf:
     
     for eta in range(4):
         eta_name = eta_values[eta]

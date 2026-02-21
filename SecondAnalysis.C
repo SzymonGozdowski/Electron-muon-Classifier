@@ -132,6 +132,8 @@ void SecondAnalysis()
     //========================
     TH1D *Number = new TH1D("Number","Number",6,-0.5,5.5);
     TH1D *Response = new TH1D("Response","Response",100,0,1);
+    TH1D *ResponseDiffrend = new TH1D("ResponseDiffrend","ResponseDiffrend",100,-1,1);
+    TH1D *ResponseOneFound = new TH1D("ResponseOneFound","ResponseOneFound",100,0,1);
 
     TH1D *DeltaPhi = new TH1D("DeltaPhi","DeltaPhi",100,0,3.5);
     TH1D *DeltaEta = new TH1D("DeltaEta","DeltaEta",100,-3,3);
@@ -190,16 +192,19 @@ void SecondAnalysis()
 
 
     int eventID=0;
-    int muoncount=0;
-    int electroncount=0;
-    int diffrentparticle=0;
+    float muoncount=0;
+    float electroncount=0;
+    float diffrentparticle=0;
+    float zeroparticle=0;
+    float oneparticle=0;
+    float twoparticle=0;
+    float allparticles=0;
 
 
-    while(tree_reader.Next()){
-        
+    while(tree_reader.Next())
+    {
+        if(eventID%200000==0) cout<<"Processing "<<eventID<<" event..."<<endl;
         eventID++;
-        
-        if(eventID%300000==0) cout<<"Processing "<<eventID<<" event..."<<endl;
         vector<TLorentzVector> Electron(2);
         vector<TLorentzVector> Muon(2);
         vector<TLorentzVector> t(2);
@@ -235,12 +240,17 @@ void SecondAnalysis()
                     Rapidity->Fill(dipartic.Rapidity());
                     DiMass->Fill(dipartic.M());
                 }
-                float response[2];
+                
                 //========================
                 //Identifying particle by ML data
                 //========================
+                //float probcut=0.72;
+                float probcut=0.5;
+                float response[2]={probcut,probcut};
+                int Found=0;
                 for(int i=0;i<2;i++)
                 {
+                    allparticles++;
                     Topocluster(t[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                         H_Count,H_Perp,H_F,H_EM,H_Lambda,H_Lambda2,H_Radius,FVariable,EMprop,Lambda2,Lambda,Radius);
                     
@@ -261,13 +271,44 @@ void SecondAnalysis()
                     float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
                     response[i] = prob_ptr[1];
                     Response->Fill(prob_ptr[1]);
+                    Found++;
                 }
+
+
                 int lepton=2;
-                //float probcut=0.72;
-                float probcut=0.5;
-                if(response[0]<probcut && response[1]<probcut) lepton=0;
-                if(response[0]>probcut && response[1]>probcut) lepton=1;
-                else diffrentparticle++;
+                int rightlepton=2;
+                if(Found==0) zeroparticle+=2;
+                else if(Found==1)
+                {
+                    if(response[0]==probcut)
+                    {
+                        if(response[1]<probcut) lepton=0;
+                        else if(response[1]>probcut) lepton=1;
+                        ResponseOneFound->Fill(response[1]);
+                        rightlepton=1;
+                    } 
+                    else if(response[1]==probcut)
+                    {
+                        if(response[0]<probcut) lepton=0;
+                        else if(response[0]>probcut) lepton=1;
+                        ResponseOneFound->Fill(response[0]);
+                        rightlepton=0;
+
+                    } 
+                    oneparticle+=2;
+                } 
+                else if(Found==2) 
+                {
+                    twoparticle+=2;
+                    if(response[0]<probcut && response[1]<probcut) lepton=0;
+                    else if(response[0]>probcut && response[1]>probcut) lepton=1;
+                    else
+                    {
+                        ResponseDiffrend->Fill((response[0]+response[1])/2);
+                        diffrentparticle+=2;
+                    } 
+                }
+                
 
                 //========================
                 //Saving electron data  
@@ -276,6 +317,7 @@ void SecondAnalysis()
                 {
                     for(int i=0;i<2;i++)
                     {
+                        if(i!=rightlepton && rightlepton!=2) continue;
                         Electron[i]=t[i];
                         H_ElPixeldEdX->Fill(TrackPixeldEdX[i]);
                         H_ElPixelHits->Fill(TrackPixelHits[i]);
@@ -313,6 +355,8 @@ void SecondAnalysis()
                 {
                     for(int i=0;i<2;i++)
                     {
+                        if(i!=rightlepton && rightlepton!=2) continue;
+
                         Muon[i]=t[i];
 
                         H_MuPixeldEdX->Fill(TrackPixeldEdX[i]);
@@ -338,34 +382,35 @@ void SecondAnalysis()
                         else if(abs(Muon[i].Eta())>1.5 && abs(Muon[i].Eta())<2.5) EtaRange=3;
                         MLDataTree->Fill();
                         EtaRangeHist->Fill(EtaRange);
+
                         muoncount++;
-                        
                     }  
-                    
                 }
             }
         }
-            
-        
+    }
 
-        }
+    cout<<"==========================="<<endl;
+    cout<<"End of file"<<endl;
+    cout<<"Number of events: "<<eventID<<endl;
+    cout<<"Number of electrons: "<<electroncount<<endl;
+    cout<<"Number of muons: "<<muoncount<<endl;
+    cout<<"==========================="<<endl;
+    cout<<"Found count:"<<endl;
+    cout<<"             Two particles: "<<twoparticle<<" Ratio "<<twoparticle/allparticles<<endl;
+    cout<<"             One particle: "<<oneparticle<<" Ratio "<<oneparticle/allparticles<<endl;
+    cout<<"             Zero particles: "<<zeroparticle<<" Ratio "<<zeroparticle/allparticles<<endl;
+    cout<<"             Diffrent particles: "<<diffrentparticle<<endl;
 
+    cout<<"==========================="<<endl;
 
-        cout<<"==========================="<<endl;
-        cout<<"End of file"<<endl;
-        cout<<"Number of events: "<<eventID<<endl;
-        cout<<"Number of electrons: "<<electroncount<<endl;
-        cout<<"Number of muons: "<<muoncount<<endl;
-        cout<<"Diffrent particles: "<<diffrentparticle<<endl;
-        cout<<"==========================="<<endl;
-
-        //gStyle->SetOptStat(000000);
-        
-        //========================
-        //Drawing histograms  
-        //========================
-        TCanvas c1;
-        TLegend* leg = new TLegend(0.58, 0.6, 0.85, 0.85);
+    //gStyle->SetOptStat(000000);
+    
+    //========================
+    //Drawing histograms  
+    //========================
+    TCanvas c1;
+    TLegend* leg = new TLegend(0.58, 0.6, 0.85, 0.85);
         leg->SetBorderSize(0);
         leg->SetNColumns(1);
         leg->SetColumnSeparation(0.1);
@@ -387,6 +432,15 @@ void SecondAnalysis()
         leg2->AddEntry(DiMassMu,"Muon","l");
     
     c1.SaveAs(Form("Plots/2%s.pdf[", name.c_str()));
+    c1.Clear();
+    Response->Draw();
+    c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
+    c1.Clear();
+    ResponseDiffrend->Draw();
+    c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
+    c1.Clear();
+    ResponseOneFound->Draw();
+    c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
 
     c1.Clear();
     DiMass->GetXaxis()->SetTitle("M_{ll} [GeV]");
@@ -429,17 +483,10 @@ void SecondAnalysis()
     MuonPhi->SetMinimum(0);
     MuonPhi->Draw();
     c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
-    
-    c1.Clear();
-    Response->Draw();
-    c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
     c1.SaveAs(Form("Plots/2%s.pdf]", name.c_str()));
-
-    
 
     MLDataTree->Write();
     file->Close();
-    
     
 }
 

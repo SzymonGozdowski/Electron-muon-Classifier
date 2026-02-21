@@ -64,7 +64,7 @@ rf.fit(X_train_scaled, y_train)
 # ========================
 
 reports = {}
-with PdfPages("Plots/doubleTrainSimulation-testSim.pdf") as pdf:
+with PdfPages("Plots/RFtestoutput.pdf") as pdf:
     
     for eta in range(4):
         eta_name = eta_values[eta]
