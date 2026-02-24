@@ -19,7 +19,13 @@ import seaborn as sns
 # Importing data
 #========================
 with uproot.open("Data/MLFinalDataTrueData.root") as f:
-    df = f["MLDataTree"].arrays(library="pd")
+   df = f["MLDataTree"].arrays(library="pd")
+
+#with uproot.open("Data/MLDataMCElectron.root") as f:
+#    df_Electron = f["MLDataTree"].arrays(library="pd")
+#with uproot.open("Data/MLDataMCMuon.root") as f:
+#    df_Muon = f["MLDataTree"].arrays(library="pd")
+#df = pd.concat([df_Electron, df_Muon], ignore_index=True)
 
 eta_values = {
     0: 'FullRange',
