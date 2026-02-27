@@ -29,9 +29,9 @@ print("_______________________________")
 # 0 = electron, 1 = muon
 df["label"] = (df["truth_particle_tag"] == 1).astype(int)
 
-# Wektory cech i etykiet
+
 y = df["label"]
-X = df.drop(columns=["label", "truth_particle_tag"])  # usuwamy też truth_particle_tag
+X = df.drop(columns=["label", "truth_particle_tag"])  
 X = X.fillna(0)  
 
 
@@ -84,11 +84,11 @@ plt.title("Predicted probabilities")
 plt.show()
 
 
-## zapis wyników do pliku CSV
+## Saving results to CSV for later analysis and plotting
 print("Saving NN results to CSV...")
 threshold = 0.5 
 df_test = X_test.copy()
-df_test['truth_particle_tag'] = y_test.values  # dodajemy prawdziwe etykiety
+df_test['truth_particle_tag'] = y_test.values  
 df_test['predicted_prob']  = y_pred
 df_test['predicted_label'] = (y_pred > threshold).astype(int)
 
