@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc
 from matplotlib.backends.backend_pdf import PdfPages
+import os
+
 
 input_file = "nn_results.csv"
 df = pd.read_csv(input_file)
@@ -11,7 +13,11 @@ y_true = df['truth_particle_tag'].values
 y_pred_label = df['predicted_label'].values
 y_pred_prob  = df['predicted_prob'].values
 
-pdf_filename = "nn_analysis_results.pdf"
+plots_dir = os.path.abspath(os.path.join(os.getcwd(), "../../plots"))
+
+os.makedirs(plots_dir, exist_ok=True)
+
+pdf_filename = os.path.join(plots_dir, "nn_analysis_results.pdf")
 pdf_pages = PdfPages(pdf_filename)
 
 # Confusion Matrix
