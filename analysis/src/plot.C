@@ -2,6 +2,7 @@
 #include <TCanvas.h>
 #include <TH1.h>
 #include <iostream>
+#include <cstring>
 
 
 //dopisać funcję DrawHist(TH1D hist, bool set_logy, ...?)
@@ -54,11 +55,24 @@ void DrawHist(std::string fPDF_name, TCanvas* c, TH1D* hist_d, bool logy){ // mo
 //
 
 
+bool DrawPlotsForElectrons = false;
+bool DrawPlotsForMuons = false;
+bool DrawAll = false;
+
 void plot(const char* inputFile, const char* outputPDF){
     TFile *f = TFile::Open(inputFile);
     if (!f || f->IsZombie()) {
         std::cout << "ERROR: Cannot open input file." << std::endl;
         return;
+    }
+
+    if (outputPDF && strstr(outputPDF, "electrons")) {
+        DrawPlotsForElectrons = true;
+    }
+    else if (outputPDF && strstr(outputPDF, "muons")) {
+        DrawPlotsForMuons = true;
+    } else {
+        DrawAll = true;
     }
 
     std::cout << "[INFO] Starting pdf plot." << std::endl;
@@ -103,6 +117,34 @@ void plot(const char* inputFile, const char* outputPDF){
     TH1D* hist_muon_PixelHits = GetHist(f, "hist_muon_PixelHits");
     TH1D* hist_muon_SCTHits = GetHist(f, "hist_muon_SCTHits");
     TH1D* hist_muon_TRTHits = GetHist(f, "hist_muon_TRTHits");
+    //
+    TH1D* hist_topo_eta = GetHist(f, "hist_topo_eta");
+    TH1D* hist_topo_phi = GetHist(f, "hist_topo_phi");
+    TH1D* hist_topo_pt = GetHist(f, "hist_topo_pt");
+    TH1D* hist_topo_lambda = GetHist(f, "hist_topo_lambda");
+    TH1D* hist_topo_lambda2 = GetHist(f, "hist_topo_lambda2");
+    TH1D* hist_topo_time = GetHist(f, "hist_topo_time");
+    TH1D* hist_topo_radius = GetHist(f, "hist_topo_radius");
+    //
+    TH1D* hist_electron_FVariable = GetHist(f, "hist_electron_FVariable");
+    TH1D* hist_electron_EMCal = GetHist(f, "hist_electron_EMCal");
+    TH1D* hist_electron_topo_eta = GetHist(f, "hist_electron_topo_eta");
+    TH1D* hist_electron_topo_phi = GetHist(f, "hist_electron_topo_phi");
+    TH1D* hist_electron_topo_pt = GetHist(f, "hist_electron_topo_pt");
+    TH1D* hist_electron_topo_lambda = GetHist(f, "hist_electron_topo_lambda");
+    TH1D* hist_electron_topo_lambda2 = GetHist(f, "hist_electron_topo_lambda2");
+    TH1D* hist_electron_topo_time = GetHist(f, "hist_electron_topo_time");
+    TH1D* hist_electron_topo_radius = GetHist(f, "hist_electron_topo_radius");
+
+    TH1D* hist_topo_muon_FVariable = GetHist(f, "hist_muon_FVariable");
+    TH1D* hist_topo_muon_EMCal = GetHist(f, "hist_muon_EMCal");
+    TH1D* hist_muon_topo_eta = GetHist(f, "hist_muon_topo_eta");
+    TH1D* hist_muon_topo_phi = GetHist(f, "hist_muon_topo_phi");
+    TH1D* hist_muon_topo_pt = GetHist(f, "hist_muon_topo_pt");
+    TH1D* hist_muon_topo_lambda = GetHist(f, "hist_muon_topo_lambda");
+    TH1D* hist_muon_topo_lambda2 = GetHist(f, "hist_muon_topo_lambda2");
+    TH1D* hist_muon_topo_time = GetHist(f, "hist_muon_topo_time");
+    TH1D* hist_muon_topo_radius = GetHist(f, "hist_muon_topo_radius");
 
 
 
@@ -119,61 +161,97 @@ void plot(const char* inputFile, const char* outputPDF){
     //c->SetLogy();
     //h1->Draw();
     //c->Print(pdfMiddle.c_str());
+    if(DrawAll){
+        DrawHist(pdfMiddle, c, hist_track_theta, false);
+        DrawHist(pdfMiddle, c, hist_track_phi, false);
+
+        DrawHist(pdfMiddle, c, hist_track_pt, true);
+        DrawHist(pdfMiddle, c, hist_track_pt_cut, true);
+
+        DrawHist(pdfMiddle, c, hist_track_eta, false);
+        DrawHist(pdfMiddle, c, hist_track_eta_cut, false);
+
+        DrawHist(pdfMiddle, c, hist_track_PixeldEdX, false);
+        DrawHist(pdfMiddle, c, hist_track_PixelHits, false);
+        DrawHist(pdfMiddle, c, hist_track_SCTHits, false);
+        DrawHist(pdfMiddle, c, hist_track_TRTHits, false);
+
+        DrawHist(pdfMiddle, c, hist_topo_eta, false);
+        DrawHist(pdfMiddle, c, hist_topo_phi, false);
+        DrawHist(pdfMiddle, c, hist_topo_pt, true);
+        DrawHist(pdfMiddle, c, hist_topo_lambda, true);
+        DrawHist(pdfMiddle, c, hist_topo_lambda2, true);
+        DrawHist(pdfMiddle, c, hist_topo_time, true);
+        DrawHist(pdfMiddle, c, hist_topo_radius, true);
+
+    }
+
+    //
+    if(DrawAll || DrawPlotsForElectrons || DrawPlotsForMuons){
+        DrawHist(pdfMiddle, c, hist_dilepton_inv_mass, false);
+        DrawHist(pdfMiddle, c, hist_dilepton_pt, true);
+        DrawHist(pdfMiddle, c, hist_dilepton_rapidity, false);
+        DrawHist(pdfMiddle, c, hist_dilepton_number, false);
+        DrawHist(pdfMiddle, c, hist_dilepton_DR, false);
+    }
+    //
+    if(DrawAll || DrawPlotsForElectrons){
+        DrawHist(pdfMiddle, c, hist_electron_number, false);
+        c->Divide(2, 2);
+        c->cd(1);
+        DrawHist(pdfMiddle, c, hist_electron_E, false);
+        c->cd(2);
+        DrawHist(pdfMiddle, c, hist_electron_Pt, true);
+        c->cd(3);
+        DrawHist(pdfMiddle, c, hist_electron_Eta, false);
+        c->cd(4);
+        DrawHist(pdfMiddle, c, hist_electron_Phi, false);
+
+        DrawHist(pdfMiddle, c, hist_electron_PixeldEdX, false);
+        DrawHist(pdfMiddle, c, hist_electron_PixelHits, false);
+        DrawHist(pdfMiddle, c, hist_electron_SCTHits, false);
+        DrawHist(pdfMiddle, c, hist_electron_TRTHits, false);
+
+        DrawHist(pdfMiddle, c, hist_electron_FVariable, false);
+        DrawHist(pdfMiddle, c, hist_electron_EMCal, false);
+        DrawHist(pdfMiddle, c, hist_electron_topo_eta, false);
+        DrawHist(pdfMiddle, c, hist_electron_topo_phi, false);
+        DrawHist(pdfMiddle, c, hist_electron_topo_pt, true);
+        DrawHist(pdfMiddle, c, hist_electron_topo_lambda, true);
+        DrawHist(pdfMiddle, c, hist_electron_topo_lambda2, true);
+        DrawHist(pdfMiddle, c, hist_electron_topo_time, true);
+        DrawHist(pdfMiddle, c, hist_electron_topo_radius, true);
+    }
+
     
-    DrawHist(pdfMiddle, c, hist_track_theta, false);
-    DrawHist(pdfMiddle, c, hist_track_phi, false);
-
-    DrawHist(pdfMiddle, c, hist_track_pt, true);
-    DrawHist(pdfMiddle, c, hist_track_pt_cut, true);
-
-    DrawHist(pdfMiddle, c, hist_track_eta, false);
-    DrawHist(pdfMiddle, c, hist_track_eta_cut, false);
-
-    DrawHist(pdfMiddle, c, hist_track_PixeldEdX, false);
-    DrawHist(pdfMiddle, c, hist_track_PixelHits, false);
-    DrawHist(pdfMiddle, c, hist_track_SCTHits, false);
-    DrawHist(pdfMiddle, c, hist_track_TRTHits, false);
-
     //
-    DrawHist(pdfMiddle, c, hist_dilepton_inv_mass, false);
-    DrawHist(pdfMiddle, c, hist_dilepton_pt, true);
-    DrawHist(pdfMiddle, c, hist_dilepton_rapidity, false);
-    DrawHist(pdfMiddle, c, hist_dilepton_number, false);
-    DrawHist(pdfMiddle, c, hist_dilepton_DR, false);
-    //
-    DrawHist(pdfMiddle, c, hist_electron_number, false);
-    c->Divide(2, 2);
-    c->cd(1);
-    DrawHist(pdfMiddle, c, hist_electron_E, false);
-    c->cd(2);
-    DrawHist(pdfMiddle, c, hist_electron_Pt, true);
-    c->cd(3);
-    DrawHist(pdfMiddle, c, hist_electron_Eta, false);
-    c->cd(4);
-    DrawHist(pdfMiddle, c, hist_electron_Phi, false);
+    if(DrawAll || DrawPlotsForMuons){
+        DrawHist(pdfMiddle, c, hist_muon_number, false);
+        c->Divide(2, 2);
+        c->cd(1);
+        DrawHist(pdfMiddle, c, hist_muon_E, false);
+        c->cd(2);
+        DrawHist(pdfMiddle, c, hist_muon_Pt, true);
+        c->cd(3);
+        DrawHist(pdfMiddle, c, hist_muon_Eta, false);
+        c->cd(4);
+        DrawHist(pdfMiddle, c, hist_muon_Phi, false);
 
-    DrawHist(pdfMiddle, c, hist_electron_PixeldEdX, false);
-    DrawHist(pdfMiddle, c, hist_electron_PixelHits, false);
-    DrawHist(pdfMiddle, c, hist_electron_SCTHits, false);
-    DrawHist(pdfMiddle, c, hist_electron_TRTHits, false);
+        DrawHist(pdfMiddle, c, hist_muon_PixeldEdX, false);
+        DrawHist(pdfMiddle, c, hist_muon_PixelHits, false);
+        DrawHist(pdfMiddle, c, hist_muon_SCTHits, false);
+        DrawHist(pdfMiddle, c, hist_muon_TRTHits, false);
 
-    
-    //
-    DrawHist(pdfMiddle, c, hist_muon_number, false);
-    c->Divide(2, 2);
-    c->cd(1);
-    DrawHist(pdfMiddle, c, hist_muon_E, false);
-    c->cd(2);
-    DrawHist(pdfMiddle, c, hist_muon_Pt, true);
-    c->cd(3);
-    DrawHist(pdfMiddle, c, hist_muon_Eta, false);
-    c->cd(4);
-    DrawHist(pdfMiddle, c, hist_muon_Phi, false);
-
-    DrawHist(pdfMiddle, c, hist_muon_PixeldEdX, false);
-    DrawHist(pdfMiddle, c, hist_muon_PixelHits, false);
-    DrawHist(pdfMiddle, c, hist_muon_SCTHits, false);
-    DrawHist(pdfMiddle, c, hist_muon_TRTHits, false);
+        DrawHist(pdfMiddle, c, hist_topo_muon_FVariable, false);
+        DrawHist(pdfMiddle, c, hist_topo_muon_EMCal, false);
+        DrawHist(pdfMiddle, c, hist_muon_topo_eta, false);
+        DrawHist(pdfMiddle, c, hist_muon_topo_phi, false);
+        DrawHist(pdfMiddle, c, hist_muon_topo_pt, true);
+        DrawHist(pdfMiddle, c, hist_muon_topo_lambda, true);
+        DrawHist(pdfMiddle, c, hist_muon_topo_lambda2, true);
+        DrawHist(pdfMiddle, c, hist_muon_topo_time, true);
+        DrawHist(pdfMiddle, c, hist_muon_topo_radius, true);
+    }
 
 
     // Zamknij PDF

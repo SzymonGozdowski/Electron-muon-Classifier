@@ -36,6 +36,23 @@ public :
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
+  float FVariable, EMprop, lambda, lambda2, time, radius;
+  int electron_number, muon_number;
+
+  std::vector<TH1*> histograms; // wektor wskaźników do histogramów
+
+
+
+   int truth_particle_tag; // 0 - electron, 1 - muon
+
+   void TopoCluster(TLorentzVector& lepton_classified, TH1D* hist_lepton_count, TH1D* hist_lepton_pt,
+      TH1D* hist_lepton_eta, TH1D* hist_lepton_phi, TH1D* hist_FVariable, TH1D* hist_EMCal, TH1D* hist_lambda, TH1D* hist_lambda2, TH1D* hist_time, TH1D* hist_radius,
+      float& FVariable, float& EMprop, float& lambda, float& lambda2, float& time, float& radius);
+
+   void mlDataTreeInit();
+
+   TTree* mlDataTree; // Drzewo do zapisu danych dla ML
+
    // Declaration of leaf types
    UInt_t          run_number;
    UInt_t          lumi_block;
@@ -1012,54 +1029,86 @@ public :
 
     // Declaring out file
    TFile* fOut;
+   TFile* fOutMLdata;
 
 
    // Declaring histograms
 
-   TH1D hist_track_phi;
-   TH1D hist_track_theta;
-   TH1D hist_track_pt;
-   TH1D hist_track_eta;
+   TH1D* hist_track_phi;
+   TH1D* hist_track_theta;
+   TH1D* hist_track_pt;
+   TH1D* hist_track_eta;
 
-   TH1D hist_track_pt_cut;
-   TH1D hist_track_eta_cut;
+   TH1D* hist_track_pt_cut;
+   TH1D* hist_track_eta_cut;
 
-   TH1D hist_dilepton_pt;
-   TH1D hist_dilepton_rapidity;
-   TH1D hist_dilepton_inv_mass;
+   TH1D* hist_dilepton_pt;
+   TH1D* hist_dilepton_rapidity;
+   TH1D* hist_dilepton_inv_mass;
 
-   TH1D hist_dilepton_number;
-   TH1D hist_muon_number;
-   TH1D hist_electron_number;
+   TH1D* hist_dilepton_number;
+   TH1D* hist_muon_number;
+   TH1D* hist_electron_number;
 
-   TH1D hist_dilepton_DR;
+   TH1D* hist_dilepton_DR;
 
-   TH1D hist_electron_E;
-   TH1D hist_electron_Pt;
-   TH1D hist_electron_Phi;
-   TH1D hist_electron_Eta;
+   TH1D* hist_electron_E;
+   TH1D* hist_electron_Pt;
+   TH1D* hist_electron_Phi;
+   TH1D* hist_electron_Eta;
 
-   TH1D hist_muon_E;
-   TH1D hist_muon_Pt;
-   TH1D hist_muon_Phi;
-   TH1D hist_muon_Eta;
+   TH1D* hist_muon_E;
+   TH1D* hist_muon_Pt;
+   TH1D* hist_muon_Phi;
+   TH1D* hist_muon_Eta;
 
-   TH1D hist_track_PixeldEdX;
-   TH1D hist_track_PixelHits;
-   TH1D hist_track_SCTHits;
-   TH1D hist_track_TRTHits;
+   TH1D* hist_track_PixeldEdX;
+   TH1D* hist_track_PixelHits;
+   TH1D* hist_track_SCTHits;
+   TH1D* hist_track_TRTHits;
 
-   TH1D hist_electron_PixeldEdX;
-   TH1D hist_electron_PixelHits;
-   TH1D hist_electron_SCTHits;
-   TH1D hist_electron_TRTHits;
+   TH1D* hist_electron_PixeldEdX;
+   TH1D* hist_electron_PixelHits;
+   TH1D* hist_electron_SCTHits;
+   TH1D* hist_electron_TRTHits;
 
-   TH1D hist_muon_PixeldEdX;
-   TH1D hist_muon_PixelHits;
-   TH1D hist_muon_SCTHits;
-   TH1D hist_muon_TRTHits;
+   TH1D* hist_muon_PixeldEdX;
+   TH1D* hist_muon_PixelHits;
+   TH1D* hist_muon_SCTHits;
+   TH1D* hist_muon_TRTHits;
 
-   G2TauTree_data23_analysis(const char* inputFile, const char* outputFile);
+   TH1D* hist_topo_eta;
+   TH1D* hist_topo_phi;
+   TH1D* hist_topo_pt;
+   TH1D* hist_topo_lambda;
+   TH1D* hist_topo_lambda2;
+   TH1D* hist_topo_r2;
+   TH1D* hist_topo_time;
+   TH1D* hist_topo_radius;
+
+   TH1D* hist_electron_topo_eta;
+   TH1D* hist_electron_topo_phi;
+   TH1D* hist_electron_topo_pt;
+   TH1D* hist_electron_topo_lambda;
+   TH1D* hist_electron_topo_lambda2;
+   TH1D* hist_electron_topo_r2;
+   TH1D* hist_electron_topo_time;
+   TH1D* hist_electron_FVariable;
+   TH1D* hist_electron_EMCal;
+   TH1D* hist_electron_topo_radius;
+
+   TH1D* hist_muon_topo_eta;
+   TH1D* hist_muon_topo_phi;
+   TH1D* hist_muon_topo_pt;
+   TH1D* hist_muon_topo_lambda;
+   TH1D* hist_muon_topo_lambda2;
+   TH1D* hist_muon_topo_r2;
+   TH1D* hist_muon_topo_time;
+   TH1D* hist_muon_FVariable;
+   TH1D* hist_muon_EMCal;
+   TH1D* hist_muon_topo_radius;
+
+   G2TauTree_data23_analysis(const char* inputFile, const char* outputFile, const char* MLdataOutputFile);
    virtual ~G2TauTree_data23_analysis();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -1073,26 +1122,25 @@ public :
 #endif
 
 #ifdef G2TauTree_data23_analysis_cxx
-G2TauTree_data23_analysis::G2TauTree_data23_analysis(const char* inputFile, const char* outputFile) : fChain(0) 
+G2TauTree_data23_analysis::G2TauTree_data23_analysis(const char* inputFile, const char* outputFile, const char* MLdataOutputFile) : fChain(0) 
 {
     TFile* f = TFile::Open(inputFile);
     f->GetObject("G2TauTree", fChain);
     fOut = TFile::Open(outputFile, "RECREATE");
+    fOutMLdata = TFile::Open(MLdataOutputFile, "RECREATE");
     
     Init(fChain);
 }
 
 G2TauTree_data23_analysis::~G2TauTree_data23_analysis()
 {
-    if (fOut) {
-        fOut->Write();   // zapis wszystkich histogramów
-        fOut->Close();   // zamknięcie pliku
-        delete fOut;
-        fOut = nullptr;
-    }
-    // jeśli fChain został stworzony w konstruktorze, można też:
-    // delete fChain;
+
+
+    // jeśli trzeba:
+    // if(fChain) delete fChain;
 }
+
+
 
 Int_t G2TauTree_data23_analysis::GetEntry(Long64_t entry)
 {
@@ -1842,6 +1890,7 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    Notify();
 }
 
+
 bool G2TauTree_data23_analysis::Notify()
 {
    // The Notify() function is called when a new file is opened. This
@@ -1867,4 +1916,5 @@ Int_t G2TauTree_data23_analysis::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
+
 #endif // #ifdef G2TauTree_data23_analysis_cxx
