@@ -18,14 +18,14 @@ import seaborn as sns
 #========================
 # Importing data
 #========================
-with uproot.open("Data/MLFinalDataTrueData.root") as f:
-   df = f["MLDataTree"].arrays(library="pd")
+#with uproot.open("Data/MLFinalDataTrueData.root") as f:
+ #  df = f["MLDataTree"].arrays(library="pd")
 
-#with uproot.open("Data/MLDataMCElectron.root") as f:
-#    df_Electron = f["MLDataTree"].arrays(library="pd")
-#with uproot.open("Data/MLDataMCMuon.root") as f:
-#    df_Muon = f["MLDataTree"].arrays(library="pd")
-#df = pd.concat([df_Electron, df_Muon], ignore_index=True)
+with uproot.open("Data/MLDataMCElectronFullCalo.root") as f:
+    df_Electron = f["MLDataTree"].arrays(library="pd")
+with uproot.open("Data/MLDataMCMuonFullCalo.root") as f:
+    df_Muon = f["MLDataTree"].arrays(library="pd")
+df = pd.concat([df_Electron, df_Muon], ignore_index=True)
 
 eta_values = {
     0: 'FullRange',
@@ -37,7 +37,7 @@ eta_values = {
 features_list = [
     'track_PixelHits', 'track_TRTHits', 'track_SCTHits',
     'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
-    'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius'
+    'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius',
 ]
 
 # ========================
@@ -45,7 +45,7 @@ features_list = [
 # ========================
 df_train, df_test = train_test_split(
     df, 
-    test_size=0.10, 
+    test_size=0.20, 
     random_state=42, 
     stratify=df['IsMuon']
 )
@@ -56,12 +56,11 @@ y_train = df_train['IsMuon']
 # ========================
 # Scaling and training
 # ========================
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
+
 
 print("Traing model on data...")
 rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1, class_weight='balanced')
-rf.fit(X_train_scaled, y_train)
+rf.fit(X_train, y_train)
 
 
 
@@ -88,12 +87,12 @@ with PdfPages("Plots/RFtestoutput.pdf") as pdf:
         print(f"Number of Leptons: {len(df_eta)}")
         
 
-        X_test_scaled = scaler.transform(df_eta[features_list])
+        X_test = df_eta[features_list]
         y_test = df_eta['IsMuon']
         
         
-        y_pred = rf.predict(X_test_scaled)
-        y_proba = rf.predict_proba(X_test_scaled)
+        y_pred = rf.predict(X_test)
+        y_proba = rf.predict_proba(X_test)
         acc = accuracy_score(y_test, y_pred) 
         print(f"Accuracy Test:    {acc:.4f}")
 
@@ -166,3 +165,22 @@ print("\n" + "="*70)
 print(f"End. Testing data: {len(df_test)} leptons.")
 print("PDF: Plots/RFoutput.pdf")
 print("="*70)
+
+def check_importance_per_group(model, df_test, features):
+    for group in [0, 1]:
+        subset = df_test[df_test['HasCalo'] == group]
+        if len(subset) == 0: continue
+        
+        name = "Tylko Pixele" if group == 0 else "Pixele + Calo"
+        print(f"\n--- Ważność cech dla grupy: {name} ---")
+        
+        # Obliczamy ważność poprzez permutację (lepsze dla podgrup)
+        from sklearn.inspection import permutation_importance
+        r = permutation_importance(model, subset[features], subset['IsMuon'], n_repeats=5, random_state=42)
+        
+        for i in r.importances_mean.argsort()[::-1]:
+            if r.importances_mean[i] > 0:
+                print(f"{features[i]:<20}: {r.importances_mean[i]:.4f}")
+
+# Wywołanie:
+check_importance_per_group(rf, df_test, features_list)

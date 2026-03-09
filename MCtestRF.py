@@ -33,10 +33,10 @@ with uproot.open("Data/MLFinalDataTrueData.root") as f:
 # Importing testing data
 #========================
 print("Importing testing data...")
-with uproot.open("Data/MLDataMCElectron.root") as fe:
+with uproot.open("Data/MLDataMCElectronFull.root") as fe:
     df_Electron = fe["MLDataTree"].arrays(library="pd")
     
-with uproot.open("Data/MLDataMCMuon.root") as fm:
+with uproot.open("Data/MLDataMCMuonFull.root") as fm:
     df_Muon = fm["MLDataTree"].arrays(library="pd")
 df_test = pd.concat([df_Electron, df_Muon], ignore_index=True)
     
@@ -47,18 +47,16 @@ features_list=['track_PixelHits', 'track_TRTHits', 'track_SCTHits',
 X_train_full = df_train[features_list]
 y_train_full = df_train['IsMuon']
 
-scaler = StandardScaler()
-X_train_full_scaled = scaler.fit_transform(X_train_full)
+
 
 print("Traing model on data...")
 rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1,class_weight='balanced')
-rf.fit(X_train_full_scaled, y_train_full)
+rf.fit(X_train_full, y_train_full)
 
 #========================
 # Exporting model and parameters
 #========================
-params = np.concatenate([scaler.mean_, scaler.scale_])
-np.savetxt("Data/scaler.txt", params.reshape(1, -1), fmt='%.8f')
+
 
 initial_type = [('float_input', FloatTensorType([None, 9]))]
 onnx_model = convert_sklearn(rf, initial_types=initial_type, target_opset=17, options={type(rf): {"zipmap": False}})
@@ -95,11 +93,10 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
         print(f"Test leptons (MC): {len(df_test_eta)}")
         
         X_test = df_test_eta[features_list]
-        X_test_scaled = scaler.transform(X_test)
         y_test = df_test_eta['IsMuon']
         
-        y_pred = rf.predict(X_test_scaled)
-        y_proba = rf.predict_proba(X_test_scaled)
+        y_pred = rf.predict(X_test)
+        y_proba = rf.predict_proba(X_test)
         
         acc = accuracy_score(y_test, y_pred)
         print(f"Accuracy on MC Sample: {acc:.3f}")

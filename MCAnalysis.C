@@ -11,7 +11,7 @@
 #include "Topocluster.C"
 
 
-void SimulationAnalysis()
+void MCAnalysis()
 {
 
     gROOT->SetBatch(kTRUE);
@@ -25,22 +25,17 @@ void SimulationAnalysis()
     
     TString File;
     string name;  
-    for(int choice=0;choice<3;choice++)
+    for(int choice=0;choice<2;choice++)
     {
         if(choice==0)
         {
             File="Data/mc_jpsi_ee.root";
-            name="MCElectronCalo";
+            name="MCElectronFullCalo";
         }
         else if(choice==1)
         {
             File="Data/mc_jpsi_mumu.root";
-            name="MCMuonCalo";
-        }
-        else if(choice==2)
-        {          
-            File="Data/data23_2trk_moreTCvars.root";
-            name="TrueDataCalo";
+            name="MCMuonFullCalo";
         }
 
         //========================
@@ -57,8 +52,8 @@ void SimulationAnalysis()
         float Lambda2;
         float Radius;
         float EtaRange;
-        bool HasCalo; 
-        bool IsMuon;
+        bool  HasCalo;
+        bool  IsMuon;
 
         TFile *file = new TFile(Form("Data/MLData%s.root",name.c_str()), "RECREATE");
         TTree *MLDataTree = new TTree("MLDataTree", "MLDataTree");
@@ -74,6 +69,7 @@ void SimulationAnalysis()
         MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
         MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
         MLDataTree->Branch("HasCalo", &HasCalo, "HasCalo/B");
+
         MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
         
@@ -184,7 +180,7 @@ void SimulationAnalysis()
             //if(eventID>491858) break;
             eventID++;
             if(eventID%300000==0) cout<<"Processing "<<eventID<<" event..."<<endl;
-            TLorentzVector Electron;
+            vector<TLorentzVector> Electron(2);
             vector<TLorentzVector> Muon(2);
             vector<TLorentzVector> t(2);
             int count=0;
@@ -197,7 +193,8 @@ void SimulationAnalysis()
                 
                 if(abs(TrackEta[track])<2.5 && TrackPt[track]>1)
                 {
-                    t[track].SetPtEtaPhiM(TrackPt[track],TrackEta[track],TrackPhi[track],MuonMass);
+                    if(choice)  t[track].SetPtEtaPhiM(TrackPt[track],TrackEta[track],TrackPhi[track],MuonMass);
+                    else t[track].SetPtEtaPhiM(TrackPt[track],TrackEta[track],TrackPhi[track],ElectronMass);
                     count++;
                 }
                 else break;
@@ -218,84 +215,52 @@ void SimulationAnalysis()
                         Rapidity->Fill(dipartic.Rapidity());
                         DiMass->Fill(dipartic.M());
                     }
-                    //========================
-                    //Searching for electrons by EgCluster 
-                    //========================
-                    int c=0;
-                    bool elctroncheck=0;
-                    Number->Fill(EgCluNum[0]);
-                    for(int i=0;i<int(EgCluNum[0]);i++)
-                    {
-                        
-                        double RadEtaPhi;
-                        double deltaPhi=acos(cos(t[0].Phi()-EgCluPhi[i]));
-                        DeltaEta->Fill(t[0].Eta()-EgCluEta[i]);
-                        DeltaPhi->Fill(deltaPhi);
-                        RadEtaPhi=sqrt(pow(t[0].Eta()-EgCluEta[i],2)+pow(deltaPhi,2));
-                        
-                        
-                        double temp=0;
-                        if(RadEtaPhi<0.9)
-                        {
-                                if(c==0)
-                                {
-                                    Electron=t[1];
-                                    temp=RadEtaPhi;
-                                } 
-                                if(c>0 && temp>RadEtaPhi)
-                                {
-                                    Electron=t[1];
-                                    
-                                    temp=RadEtaPhi;
-                                }
-                                
-                                elctroncheck=1;
-                                c++;
-                        } 
-                        if(elctroncheck==1) HRadEtaPhi->Fill(RadEtaPhi);
-                    }
+                    
                     
                     
                     //========================
                     //Saving electron data  
                     //========================
-                    if(elctroncheck && dipartic.M()<3)
+                    if(!choice && dipartic.M()<3)
                     {
-                        H_ElPixeldEdX->Fill(TrackPixeldEdX[1]);
-                        H_ElPixelHits->Fill(TrackPixelHits[1]);
-                        H_ElPixelSCTHits->Fill(TrackSCTHits[1]);
-                        H_ElPixelTRTHits->Fill(TrackTRTHits[1]);
+                        for(int i=0;i<2;i++)
+                        {
+                            Electron[i]=t[i];
 
-                        ElectronEnergy->Fill(Electron.E());
-                        ElectronEta->Fill(Electron.Eta());
-                        ElectronPt->Fill(Electron.Pt());
-                        ElectronPhi->Fill(Electron.Phi());
-                        DiMassEl->Fill(dipartic.M());
-                        
-                        Topocluster(Electron,TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
-                            CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
-                        
-                        if(FVariable==-1) HasCalo=0;
-                        else HasCalo=1;              
-                        PixelHits=TrackPixelHits[1];
-                        PixelTRTHits=TrackTRTHits[1];
-                        PixeldEdX=TrackPixeldEdX[1];
-                        PixelSCTHits=TrackSCTHits[1];
-                        if(abs(Electron.Eta())<1) EtaRange=1;
-                        else if(abs(Electron.Eta())>1 && abs(Electron.Eta())<1.5) EtaRange=2;
-                        else if(abs(Electron.Eta())>1.5 && abs(Electron.Eta())<2.5) EtaRange=3;
-                        if(choice==2)  IsMuon=0;
-                        else IsMuon=choice;
-                        MLDataTree->Fill();
-                        EtaRangeHist->Fill(EtaRange);
-                        electroncount++;
+                            H_ElPixeldEdX->Fill(TrackPixeldEdX[i]);
+                            H_ElPixelHits->Fill(TrackPixelHits[i]);
+                            H_ElPixelSCTHits->Fill(TrackSCTHits[i]);
+                            H_ElPixelTRTHits->Fill(TrackTRTHits[i]);
 
+                            ElectronEnergy->Fill(Electron[i].E());
+                            ElectronEta->Fill(Electron[i].Eta());
+                            ElectronPt->Fill(Electron[i].Pt());
+                            ElectronPhi->Fill(Electron[i].Phi());
+                            DiMassEl->Fill(dipartic.M());
+                            
+                            Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
+                                CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
+                            
+                            if(FVariable==-1) HasCalo=0;
+                            else HasCalo=1;             
+                            PixelHits=TrackPixelHits[i];
+                            PixelTRTHits=TrackTRTHits[i];
+                            PixeldEdX=TrackPixeldEdX[i];
+                            PixelSCTHits=TrackSCTHits[i];
+                            if(abs(Electron[i].Eta())<1) EtaRange=1;
+                            else if(abs(Electron[i].Eta())>1 && abs(Electron[i].Eta())<1.5) EtaRange=2;
+                            else if(abs(Electron[i].Eta())>1.5 && abs(Electron[i].Eta())<2.5) EtaRange=3;
+                            IsMuon=0;
+                            MLDataTree->Fill();
+                            EtaRangeHist->Fill(EtaRange);
+                            electroncount++;
+                        } 
                     }
 
                     //========================
                     //Saving muon data  
                     //========================
-                    if(!elctroncheck && dipartic.M()>2.9)
+                    if(choice && dipartic.M()>2.9)
                     {
                         for(int i=0;i<2;i++)
                         {
@@ -314,15 +279,13 @@ void SimulationAnalysis()
                                 CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon, FVariable, EMprop,Lambda2, Lambda, Radius);
 
                             if(FVariable==-1) HasCalo=0;
-                            else HasCalo=1;  
-                            
+                            else HasCalo=1;
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];
                             PixelSCTHits=TrackSCTHits[i];
-                                
-                            if(choice==2)  IsMuon=1;
-                            else IsMuon=choice;
+                    
+                            IsMuon=1;
 
                             if(abs(Muon[i].Eta())<1) EtaRange=1;
                             else if(abs(Muon[i].Eta())>1 && abs(Muon[i].Eta())<1.5) EtaRange=2;

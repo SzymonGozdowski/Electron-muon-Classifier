@@ -79,13 +79,13 @@ void SecondAnalysis()
 
     const char* input_name  = input_name_alloc.get();
     const char* output_names[] = {"label", "probabilities"};
-    
+    /*
     float mean[9];
     float scale[9];
     std::ifstream file_scaler("Data/scaler.txt");
     for(int i = 0; i < 9; ++i) file_scaler >> mean[i];
     for(int i = 0; i < 9; ++i) file_scaler >> scale[i];
-        
+    */   
     //========================
     // Set up input file chain
     //========================
@@ -262,8 +262,6 @@ void SecondAnalysis()
                     
                     std::vector<float> input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius};
                 
-                    for (int j = 0; j < 9; j++)
-                        input[j] = (input[j] - mean[j]) / scale[j];
                     std::vector<int64_t> input_shape = {1, 9};
 
                     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(allocator.GetInfo(),input.data(),input.size(),input_shape.data(),input_shape.size());
@@ -333,7 +331,8 @@ void SecondAnalysis()
                         Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                             CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
                         
-                        if(FVariable==-1) continue;              
+                        if(FVariable==-1) HasCalo=0;
+                        else HasCalo=1;              
                         PixelHits=TrackPixelHits[i];
                         PixelTRTHits=TrackTRTHits[i];
                         PixeldEdX=TrackPixeldEdX[i];
@@ -371,7 +370,8 @@ void SecondAnalysis()
                         Topocluster(Muon[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                             CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon, FVariable, EMprop,Lambda2, Lambda, Radius);
 
-                        if(FVariable==-1) continue;
+                        if(FVariable==-1) HasCalo=0;
+                        else HasCalo=1; 
                         PixelHits=TrackPixelHits[i];
                         PixelTRTHits=TrackTRTHits[i];
                         PixeldEdX=TrackPixeldEdX[i];
