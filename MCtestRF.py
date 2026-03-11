@@ -13,8 +13,7 @@ from sklearn.metrics import (
     roc_curve,
     auc
 )
-from skl2onnx import convert_sklearn
-from skl2onnx.common.data_types import FloatTensorType
+
 import seaborn as sns
 import os
 
@@ -26,7 +25,7 @@ os.makedirs("Plots", exist_ok=True)
 #========================
 print("Importing training data...")
 with uproot.open("Data/MLFinalDataTrueData.root") as f:
-    df_train = f["MLDataTree"].arrays(library="pd")
+    df_test = f["MLDataTree"].arrays(library="pd")
 
     
 #========================
@@ -38,11 +37,11 @@ with uproot.open("Data/MLDataMCElectronFull.root") as fe:
     
 with uproot.open("Data/MLDataMCMuonFull.root") as fm:
     df_Muon = fm["MLDataTree"].arrays(library="pd")
-df_test = pd.concat([df_Electron, df_Muon], ignore_index=True)
+df_train = pd.concat([df_Electron, df_Muon], ignore_index=True)
     
 features_list=['track_PixelHits', 'track_TRTHits', 'track_SCTHits',
-                        'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
-                        'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius']
+                        'track_PixeldEdX','Cal_EMprop','Cal_FVariable',
+                        'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius' ]
 
 X_train_full = df_train[features_list]
 y_train_full = df_train['IsMuon']
@@ -53,16 +52,7 @@ print("Traing model on data...")
 rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1,class_weight='balanced')
 rf.fit(X_train_full, y_train_full)
 
-#========================
-# Exporting model and parameters
-#========================
 
-
-initial_type = [('float_input', FloatTensorType([None, 9]))]
-onnx_model = convert_sklearn(rf, initial_types=initial_type, target_opset=17, options={type(rf): {"zipmap": False}})
-onnx_model.ir_version = 9
-with open("Data/RFMuonElectron.onnx", "wb") as fo:
-    fo.write(onnx_model.SerializeToString())
 
 
 

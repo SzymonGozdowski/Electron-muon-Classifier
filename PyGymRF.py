@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from skl2onnx import convert_sklearn
+from skl2onnx.common.data_types import FloatTensorType
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -21,9 +23,9 @@ import seaborn as sns
 #with uproot.open("Data/MLFinalDataTrueData.root") as f:
  #  df = f["MLDataTree"].arrays(library="pd")
 
-with uproot.open("Data/MLDataMCElectronFullCalo.root") as f:
+with uproot.open("Data/MLDataMCElectronFull.root") as f:
     df_Electron = f["MLDataTree"].arrays(library="pd")
-with uproot.open("Data/MLDataMCMuonFullCalo.root") as f:
+with uproot.open("Data/MLDataMCMuonFull.root") as f:
     df_Muon = f["MLDataTree"].arrays(library="pd")
 df = pd.concat([df_Electron, df_Muon], ignore_index=True)
 
@@ -33,7 +35,7 @@ eta_values = {
     2: '1.0-1.5',
     3: '1.5-2.5'
 }
-
+                        
 features_list = [
     'track_PixelHits', 'track_TRTHits', 'track_SCTHits',
     'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
@@ -62,7 +64,16 @@ print("Traing model on data...")
 rf = RandomForestClassifier(n_estimators=200, max_depth=10, min_samples_split=10, random_state=42, n_jobs=-1, class_weight='balanced')
 rf.fit(X_train, y_train)
 
+#========================
+# Exporting model and parameters
+#========================
 
+
+initial_type = [('float_input', FloatTensorType([None, 9]))]
+onnx_model = convert_sklearn(rf, initial_types=initial_type, target_opset=17, options={type(rf): {"zipmap": False}})
+onnx_model.ir_version = 9
+with open("Data/RFMuonElectron.onnx", "wb") as fo:
+    fo.write(onnx_model.SerializeToString())
 
 # ========================
 # Generating outputs
@@ -142,6 +153,11 @@ with PdfPages("Plots/RFtestoutput.pdf") as pdf:
         plt.close(fig)
 
     # Last page
+    
+    fig2=plt.figure(figsize=(10,8))
+    sns.heatmap(df[features_list + ['IsMuon']].corr(), annot=True, cmap='coolwarm')
+    pdf.savefig(fig2, bbox_inches='tight')
+    
     fig = plt.figure(figsize=(11, 14))
     fig.text(
         0.35, 0.98,
@@ -163,24 +179,6 @@ with PdfPages("Plots/RFtestoutput.pdf") as pdf:
 
 print("\n" + "="*70)
 print(f"End. Testing data: {len(df_test)} leptons.")
-print("PDF: Plots/RFoutput.pdf")
+print("PDF: Plots/RFouhgtput.pdf")
 print("="*70)
 
-def check_importance_per_group(model, df_test, features):
-    for group in [0, 1]:
-        subset = df_test[df_test['HasCalo'] == group]
-        if len(subset) == 0: continue
-        
-        name = "Tylko Pixele" if group == 0 else "Pixele + Calo"
-        print(f"\n--- Ważność cech dla grupy: {name} ---")
-        
-        # Obliczamy ważność poprzez permutację (lepsze dla podgrup)
-        from sklearn.inspection import permutation_importance
-        r = permutation_importance(model, subset[features], subset['IsMuon'], n_repeats=5, random_state=42)
-        
-        for i in r.importances_mean.argsort()[::-1]:
-            if r.importances_mean[i] > 0:
-                print(f"{features[i]:<20}: {r.importances_mean[i]:.4f}")
-
-# Wywołanie:
-check_importance_per_group(rf, df_test, features_list)

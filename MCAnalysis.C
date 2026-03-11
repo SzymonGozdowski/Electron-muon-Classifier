@@ -30,12 +30,12 @@ void MCAnalysis()
         if(choice==0)
         {
             File="Data/mc_jpsi_ee.root";
-            name="MCElectronFullCalo";
+            name="MCElectronFull";
         }
         else if(choice==1)
         {
             File="Data/mc_jpsi_mumu.root";
-            name="MCMuonFullCalo";
+            name="MCMuonFull";
         }
 
         //========================
@@ -128,9 +128,8 @@ void MCAnalysis()
         TH1D *HRadEtaPhi = new TH1D("RadEtaPhi","RadEtaPhi",100,0,8);
         TH1D *EtaRangeHist = new TH1D("EtaRangeHist","EtaRangeHist",3,0.5,3.5);
 
-        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2.9,3.2);
-        TH1D *DiMassEl = new TH1D("dimassEl","Lepton pair mass",50,1.5,3.9);
-        TH1D *DiMassMu = new TH1D("dimassMu","Lepton pair mass",50,1.5,3.9);
+        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2.5,3.5);
+
 
         TH1D *Pt = new TH1D("Pt","Transverse momentum of lepton pair",50,0,0.2);
         TH1D *Rapidity = new TH1D("Rapidity ","Rapidity of lepton pair",50,-3,3);
@@ -170,6 +169,7 @@ void MCAnalysis()
         TH1D *RadiusMuon = new TH1D("RadiusMuon","RadiusMuon",40,0,100);
         TH1D *RadiusElec = new TH1D("RadiusElec","RadiusElec",40,0,100);
 
+        TH1D *PhiDiffHist = new TH1D("PhiDiffHist","PhiDiffHist",40,-100,100);
 
         int eventID=0;
         int muoncount=0;
@@ -209,19 +209,23 @@ void MCAnalysis()
                 dipartic=t[0]+t[1];
                 if(dipartic.Perp()<0.2 && dipartic.M()<3.2)
                 {
-                    if(dipartic.M()>2.9)
-                    {
-                        Pt->Fill(dipartic.Perp());
-                        Rapidity->Fill(dipartic.Rapidity());
-                        DiMass->Fill(dipartic.M());
-                    }
                     
-                    
-                    
+                    Pt->Fill(dipartic.Perp());
+                    Rapidity->Fill(dipartic.Rapidity());
+                    DiMass->Fill(dipartic.M());
+                    //========================
+                    //Cut on Bethe-Heitler
+                    //========================
+                    TVector3 b = dipartic.BoostVector();
+                    TLorentzVector t_prim0, t_prim1;
+                    t_prim0=t[0];// t_prim0.Boost(b);
+                    t_prim1=t[1];// t_prim1.Boost(b);
+                    PhiDiffHist->Fill(cos(t_prim0.Theta())*DEG);
+                    PhiDiffHist->Fill(cos(t_prim1.Theta())*DEG);
                     //========================
                     //Saving electron data  
                     //========================
-                    if(!choice && dipartic.M()<3)
+                    if(!choice)
                     {
                         for(int i=0;i<2;i++)
                         {
@@ -236,13 +240,12 @@ void MCAnalysis()
                             ElectronEta->Fill(Electron[i].Eta());
                             ElectronPt->Fill(Electron[i].Pt());
                             ElectronPhi->Fill(Electron[i].Phi());
-                            DiMassEl->Fill(dipartic.M());
+                    
                             
                             Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
                             
-                            if(FVariable==-1) HasCalo=0;
-                            else HasCalo=1;             
+                            if(FVariable==-1) continue;           
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];
@@ -260,7 +263,7 @@ void MCAnalysis()
                     //========================
                     //Saving muon data  
                     //========================
-                    if(choice && dipartic.M()>2.9)
+                    if(choice)
                     {
                         for(int i=0;i<2;i++)
                         {
@@ -278,8 +281,7 @@ void MCAnalysis()
                             Topocluster(Muon[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon, FVariable, EMprop,Lambda2, Lambda, Radius);
 
-                            if(FVariable==-1) HasCalo=0;
-                            else HasCalo=1;
+                            if(FVariable==-1) continue;
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];
@@ -295,7 +297,7 @@ void MCAnalysis()
                             muoncount++;
                             
                         }
-                        DiMassMu->Fill(dipartic.M());
+
                     }              
                 }
         
@@ -329,16 +331,7 @@ void MCAnalysis()
             leg->SetTextSize(0.05);
             leg->AddEntry(H_ElPixelHits,"Electron","l");
             leg->AddEntry(H_MuPixelHits,"Muon","l");
-        TLegend* leg2 = new TLegend(0.2, 0.6, 0.45, 0.85);
-            leg2->SetBorderSize(0);
-            leg2->SetNColumns(1);
-            leg2->SetColumnSeparation(0.1);
-            leg2->SetEntrySeparation(0.1);
-            leg2->SetMargin(0.15);
-            leg2->SetTextFont(42);
-            leg2->SetTextSize(0.05);
-            leg2->AddEntry(DiMassEl,"Electron","l");
-            leg2->AddEntry(DiMassMu,"Muon","l");
+
         
         c1.SaveAs(Form("Plots/%s.pdf[", name.c_str()));
 
@@ -358,13 +351,11 @@ void MCAnalysis()
         c1.SaveAs(Form("Plots/%s.pdf", name.c_str()));
 
         c1.Clear();
-        DiMassMu->GetXaxis()->SetTitle("M_{ll} [GeV]");
-        DiMassEl->SetLineColor(kOrange);
-        DiMassMu->SetLineColor(kBlue);
-        DiMassMu->Draw();
-        DiMassEl->Draw("same");
-        leg2->Draw();
+        PhiDiffHist->GetXaxis()->SetTitle("\\Delta \\Phi");
+        PhiDiffHist->Draw();
         c1.SaveAs(Form("Plots/%s.pdf", name.c_str()));
+
+ 
 
         c1.Clear();
         c1.Divide(2,2);
@@ -397,8 +388,6 @@ void MCAnalysis()
         c1.Divide(2,2);
         c1.cd(1);
         H_ElPixelHits->SetTitle("PixelHits");
-        H_ElPixelHits->Scale(1./H_ElPixelHits->Integral());
-        H_MuPixelHits->Scale(1./H_MuPixelHits->Integral());
         H_ElPixelHits->SetLineColor(kBlue);
         H_MuPixelHits->SetLineColor(kOrange);
         H_ElPixelHits->Draw("HIST");
@@ -407,8 +396,6 @@ void MCAnalysis()
 
         c1.cd(2);
         H_ElPixelHits->SetTitle("PixelTRTHits");
-        H_ElPixelTRTHits->Scale(1./H_ElPixelTRTHits->Integral());
-        H_MuPixelTRTHits->Scale(1./H_MuPixelTRTHits->Integral());
         H_ElPixelTRTHits->SetLineColor(kBlue);
         H_MuPixelTRTHits->SetLineColor(kOrange);
         H_ElPixelTRTHits->Draw("HIST");
@@ -417,9 +404,6 @@ void MCAnalysis()
 
         c1.cd(3);
         H_ElPixelHits->SetTitle("PixelSCTHits");
-
-        H_ElPixelSCTHits->Scale(1./H_ElPixelSCTHits->Integral());
-        H_MuPixelSCTHits->Scale(1./H_MuPixelSCTHits->Integral());
         H_ElPixelSCTHits->SetLineColor(kBlue);
         H_MuPixelSCTHits->SetLineColor(kOrange);
         H_ElPixelSCTHits->Draw("HIST");
@@ -428,8 +412,6 @@ void MCAnalysis()
 
         c1.cd(4);
         H_ElPixelHits->SetTitle("PixeldEdX");
-        H_ElPixeldEdX->Scale(1./H_ElPixeldEdX->Integral());
-        H_MuPixeldEdX->Scale(1./H_MuPixeldEdX->Integral());
         H_ElPixeldEdX->SetLineColor(kBlue);
         H_MuPixeldEdX->SetLineColor(kOrange);
         H_ElPixeldEdX->Draw("HIST");
@@ -442,8 +424,6 @@ void MCAnalysis()
         c1.Divide(2,2);
         c1.cd(1);
         CountMuon->SetTitle("Number of topoclusters");
-        CountElec->Scale(1./CountElec->Integral());
-        CountMuon->Scale(1./CountMuon->Integral());
         CountElec->SetLineColor(kBlue);
         CountMuon->SetLineColor(kOrange);
         CountElec->Draw("HIST");
@@ -452,8 +432,6 @@ void MCAnalysis()
 
         c1.cd(2);
         PerpElec->SetTitle("Travsersal momentum");
-        PerpElec->Scale(1./PerpElec->Integral());
-        PerpMuon->Scale(1./PerpMuon->Integral());
         PerpElec->SetLineColor(kBlue);
         PerpMuon->SetLineColor(kOrange);
         PerpElec->Draw("HIST");
@@ -462,8 +440,6 @@ void MCAnalysis()
 
         c1.cd(3);
         FElec->SetTitle("F variable");
-        FElec->Scale(1./FElec->Integral());
-        FMuon->Scale(1./FMuon->Integral());
         FElec->SetLineColor(kBlue);
         FMuon->SetLineColor(kOrange);
         FMuon->Draw("HIST");
@@ -472,12 +448,11 @@ void MCAnalysis()
 
         c1.cd(4);
         EMElec->SetTitle("EMCalorimetr probality");
-        EMElec->Scale(1./EMElec->Integral());
-        EMMuon->Scale(1./EMMuon->Integral());
         EMElec->SetLineColor(kBlue);
         EMMuon->SetLineColor(kOrange);
-        EMMuon->Draw("HIST");
-        EMElec->Draw("HIST SAME");
+        EMElec->Draw("HIST");
+        EMMuon->Draw("HIST SAME");
+        
         leg->Draw();
         c1.SaveAs(Form("Plots/%s.pdf", name.c_str()));
 
@@ -485,8 +460,6 @@ void MCAnalysis()
         c1.Divide(2,2);
         c1.cd(1);
         LambdaElec->SetTitle("Cluster's lambda");
-        LambdaElec->Scale(1./LambdaElec->Integral());
-        LambdaMuon->Scale(1./LambdaMuon->Integral());
         LambdaElec->SetLineColor(kBlue);
         LambdaMuon->SetLineColor(kOrange);
         LambdaElec->Draw("HIST");
@@ -495,8 +468,6 @@ void MCAnalysis()
 
         c1.cd(2);
         Lambda2Elec->SetTitle("Cluster's lambda2");
-        Lambda2Elec->Scale(1./Lambda2Elec->Integral());
-        Lambda2Muon->Scale(1./Lambda2Muon->Integral());
         Lambda2Elec->SetLineColor(kBlue);
         Lambda2Muon->SetLineColor(kOrange);
         Lambda2Elec->Draw("HIST");
@@ -505,8 +476,6 @@ void MCAnalysis()
 
         c1.cd(3);
         RadiusElec->SetTitle("Cluster's radius");
-        RadiusElec->Scale(1./RadiusElec->Integral());
-        RadiusMuon->Scale(1./RadiusMuon->Integral());
         RadiusElec->SetLineColor(kBlue);
         RadiusMuon->SetLineColor(kOrange);
         RadiusElec->Draw("HIST");
