@@ -23,9 +23,9 @@ import seaborn as sns
 #with uproot.open("Data/MLFinalDataTrueData.root") as f:
  #  df = f["MLDataTree"].arrays(library="pd")
 
-with uproot.open("Data/MLDataMCElectronFull.root") as f:
+with uproot.open("Data/MLDataMCElectronFullCalo.root") as f:
     df_Electron = f["MLDataTree"].arrays(library="pd")
-with uproot.open("Data/MLDataMCMuonFull.root") as f:
+with uproot.open("Data/MLDataMCMuonFullCalo.root") as f:
     df_Muon = f["MLDataTree"].arrays(library="pd")
 df = pd.concat([df_Electron, df_Muon], ignore_index=True)
 
@@ -39,7 +39,7 @@ eta_values = {
 features_list = [
     'track_PixelHits', 'track_TRTHits', 'track_SCTHits',
     'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
-    'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius',
+    'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius', 'HasCalo'
 ]
 
 # ========================
@@ -69,7 +69,7 @@ rf.fit(X_train, y_train)
 #========================
 
 
-initial_type = [('float_input', FloatTensorType([None, 9]))]
+initial_type = [('float_input', FloatTensorType([None, 10]))]
 onnx_model = convert_sklearn(rf, initial_types=initial_type, target_opset=17, options={type(rf): {"zipmap": False}})
 onnx_model.ir_version = 9
 with open("Data/RFMuonElectron.onnx", "wb") as fo:
@@ -80,7 +80,7 @@ with open("Data/RFMuonElectron.onnx", "wb") as fo:
 # ========================
 
 reports = {}
-with PdfPages("Plots/RFtestoutput.pdf") as pdf:
+with PdfPages("Plots/MCRFCalo.pdf") as pdf:
     
     for eta in range(4):
         eta_name = eta_values[eta]
@@ -161,7 +161,7 @@ with PdfPages("Plots/RFtestoutput.pdf") as pdf:
     fig = plt.figure(figsize=(11, 14))
     fig.text(
         0.35, 0.98,
-        "Classification Reports Summary\nTrained: Double TrueData.root | Test: TrueData.root",
+        "Classification Reports Summary\nTrained:  MCData.root | Test: MCData.root",
         ha='center', fontsize=18, fontweight='bold'
     )
     y_pos = 0.90
@@ -179,6 +179,6 @@ with PdfPages("Plots/RFtestoutput.pdf") as pdf:
 
 print("\n" + "="*70)
 print(f"End. Testing data: {len(df_test)} leptons.")
-print("PDF: Plots/RFouhgtput.pdf")
+print("PDF: Plots/MCRF.pdf")
 print("="*70)
 

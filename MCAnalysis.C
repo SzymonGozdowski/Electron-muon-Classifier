@@ -30,12 +30,12 @@ void MCAnalysis()
         if(choice==0)
         {
             File="Data/mc_jpsi_ee.root";
-            name="MCElectronFull";
+            name="MCElectronFullCalo";
         }
         else if(choice==1)
         {
             File="Data/mc_jpsi_mumu.root";
-            name="MCMuonFull";
+            name="MCMuonFullCalo";
         }
 
         //========================
@@ -169,7 +169,7 @@ void MCAnalysis()
         TH1D *RadiusMuon = new TH1D("RadiusMuon","RadiusMuon",40,0,100);
         TH1D *RadiusElec = new TH1D("RadiusElec","RadiusElec",40,0,100);
 
-        TH1D *PhiDiffHist = new TH1D("PhiDiffHist","PhiDiffHist",40,-100,100);
+        TH1D *PhiDiffHist = new TH1D("PhiDiffHist","PhiDiffHist",40,160,180);
 
         int eventID=0;
         int muoncount=0;
@@ -220,8 +220,7 @@ void MCAnalysis()
                     TLorentzVector t_prim0, t_prim1;
                     t_prim0=t[0];// t_prim0.Boost(b);
                     t_prim1=t[1];// t_prim1.Boost(b);
-                    PhiDiffHist->Fill(cos(t_prim0.Theta())*DEG);
-                    PhiDiffHist->Fill(cos(t_prim1.Theta())*DEG);
+                    PhiDiffHist->Fill(acos(cos(t_prim0.Phi()-t_prim1.Phi()))*DEG);
                     //========================
                     //Saving electron data  
                     //========================
@@ -245,7 +244,9 @@ void MCAnalysis()
                             Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
                             
-                            if(FVariable==-1) continue;           
+                            //if(FVariable==-1) continue; 
+                            if(FVariable==-1) HasCalo=0;
+                            else HasCalo=1;          
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];
@@ -281,7 +282,10 @@ void MCAnalysis()
                             Topocluster(Muon[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon, FVariable, EMprop,Lambda2, Lambda, Radius);
 
-                            if(FVariable==-1) continue;
+                            //if(FVariable==-1) continue;
+                            if(FVariable==-1) HasCalo=0;
+                            else HasCalo=1;
+                            
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];

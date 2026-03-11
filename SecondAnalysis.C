@@ -46,6 +46,7 @@ void SecondAnalysis()
     float Lambda2;
     float Radius;
     float EtaRange;
+    float HasCalo;
     bool  IsMuon;
 
     TFile *file = new TFile(Form("Data/MLFinalData%s.root",name.c_str()), "RECREATE");
@@ -61,6 +62,7 @@ void SecondAnalysis()
     MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
     MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
     MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
+    MLDataTree->Branch("HasCalo", &HasCalo, "HasCalo/F");
     MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
     //========================
@@ -198,7 +200,7 @@ void SecondAnalysis()
     TH1D *H_Lambda2 = new TH1D("H_Lambda2","Lambda2",40,0,600);
     TH1D *H_Radius = new TH1D("H_Radius","Radius",40,0,100);
 
-    TH1D *PhiDiffHist = new TH1D("PhiDiffHist","PhiDiffHist",40,-100,100);
+    TH1D *PhiDiffHist = new TH1D("PhiDiffHist","PhiDiffHist",40,160,180);
     
     
 
@@ -257,8 +259,8 @@ void SecondAnalysis()
                 TLorentzVector t_prim0, t_prim1;
                 t_prim0=t[0];// t_prim0.Boost(b);
                 t_prim1=t[1];// t_prim1.Boost(b);
-                PhiDiffHist->Fill(cos(t_prim0.Theta())*DEG);
-                PhiDiffHist->Fill(cos(t_prim1.Theta())*DEG);
+                PhiDiffHist->Fill(acos(cos(t_prim0.Phi()-t_prim1.Phi()))*DEG);
+
 
 
                 
@@ -266,7 +268,7 @@ void SecondAnalysis()
                 //Identifying particle by ML data
                 //========================
                 //float probcut=0.72;
-                float probcut=0.4;
+                float probcut=0.5;
                 float response[2]={probcut,probcut};
                 int Found=0;
                 for(int i=0;i<2;i++)
@@ -279,12 +281,11 @@ void SecondAnalysis()
                     PixelTRTHits=TrackTRTHits[i];
                     PixeldEdX=TrackPixeldEdX[i];
                     PixelSCTHits=TrackSCTHits[i];
-                    if(FVariable==-1) continue;              
-                    
-                    std::vector<float> input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius};
-                
-                    std::vector<int64_t> input_shape = {1, 9};
-
+                    //if(FVariable==-1) continue;              
+                    if(FVariable==-1) HasCalo=0;
+                    else HasCalo=1;
+                    std::vector<float> input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius, HasCalo};
+                    std::vector<int64_t> input_shape = {1, 10};
                     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(allocator.GetInfo(),input.data(),input.size(),input_shape.data(),input_shape.size());
                     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, &input_name, &input_tensor, 1, output_names, 2);
                     float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
