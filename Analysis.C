@@ -77,6 +77,8 @@ void Analysis::Loop()
    float Lambda2;
    float Radius;
    float Time;
+   float Eta;
+   float CellSigSampling;
    bool  IsMuon;
 
    TFile *file = new TFile("MLData.root", "RECREATE");
@@ -92,6 +94,8 @@ void Analysis::Loop()
    MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
    MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
    MLDataTree->Branch("Cal_Time", &Time, "Cal_Time/F");
+   MLDataTree->Branch("Eta", &Eta, "Eta/F");
+   MLDataTree->Branch("CellSigSampling", &CellSigSampling, "CellSigSampling/F");
    MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
    Long64_t nentries = fChain->GetEntriesFast();
@@ -234,6 +238,8 @@ void Analysis::Loop()
                PixelTRTHits=track_TRTHits->at(1);
                PixeldEdX=track_PixeldEdX->at(1);
                PixelSCTHits=track_SCTHits->at(1);
+	       Eta=track_eta->at(1);
+	       CellSigSampling = topo_cluster_cell_sig_sampling->at(1);
                IsMuon=0;
                MLDataTree->Fill();
 
@@ -260,6 +266,8 @@ void Analysis::Loop()
                   PixelTRTHits=track_TRTHits->at(i);
                   PixeldEdX=track_PixeldEdX->at(i);
                   PixelSCTHits=track_SCTHits->at(i);
+		  Eta = track_eta->at(i);
+	          CellSigSampling = topo_cluster_cell_sig_sampling->at(i);
                   IsMuon=1;
                   MLDataTree->Fill();
                }
