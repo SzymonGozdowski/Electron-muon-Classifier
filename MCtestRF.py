@@ -24,7 +24,7 @@ os.makedirs("Plots", exist_ok=True)
 # Importing training data
 #========================
 print("Importing training data...")
-with uproot.open("Data/MLFinalDataTrueData.root") as f:
+with uproot.open("Data/MLDataTrueData.root") as f:
     df_test = f["MLDataTree"].arrays(library="pd")
 
     
@@ -105,9 +105,9 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
         )
         
         # 1. Confusion Matrix
-        cm = confusion_matrix(y_test, y_pred, normalize='true')
+        cm = confusion_matrix(y_test, y_pred)
         sns.heatmap(
-            cm, annot=True, fmt='.2%', ax=axes[0, 0], cmap='Blues',
+            cm, annot=True, fmt='.0f', ax=axes[0, 0], cmap='Blues',
             xticklabels=label_names, yticklabels=label_names
         )
         axes[0, 0].set_title('Confusion Matrix')
@@ -140,7 +140,7 @@ with PdfPages("Plots/RF_test_output.pdf") as pdf:
         )
         axes[1, 0].hist(
             signal_scores, bins=bins, density=True, histtype='stepfilled',
-            alpha=0.4, color='orange', label='Muon (MC)', hatch='//')
+            alpha=0.4, color='red', label='Muon (MC)', hatch='//')
         axes[1, 0].set_xlabel('RF response')
         axes[1, 0].set_ylabel('(1/N) dN/dx')
         axes[1, 0].set_title('Classifier Response (MC)')

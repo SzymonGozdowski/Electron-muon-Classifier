@@ -11,9 +11,8 @@
 #include <TH1.h> 
 
 void Topocluster(TLorentzVector particle,TTreeReaderArray<unsigned int>& TopoCluNum, TTreeReaderArray<float>& TopoCluEta,TTreeReaderArray<float>& TopoCluPhi, TTreeReaderArray<float>& TopoCluPt,
-       TTreeReaderArray<float>& TopoCluLamda, TTreeReaderArray<float>& TopoCluLamda2, TTreeReaderArray<float>& TopoCluR2, TTreeReaderArray<float>& TopoCluEMProb, TTreeReaderArray<bool>& TopoCluPass, 
-       TTreeReaderArray<int>& TopoCellSig, TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist, TH1D* Lambda2Hist,   TH1D* RadiusHist, TH1D* CellSig, float &FVariable, float &EMprop,
-       float &Lambda2, float &Lambda, float &Radius, bool &muoncheck)
+       TTreeReaderArray<float>& TopoCluLamda, TTreeReaderArray<float>& TopoCluLamda2, TTreeReaderArray<float>& TopoCluR2, TTreeReaderArray<float>& TopoCluEMProb, TTreeReaderArray<bool>& TopoCluPass,
+       TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist, TH1D* Lambda2Hist,   TH1D* RadiusHist, float &FVariable, float &EMprop, float &Lambda2, float &Lambda, float &Radius)
 {
    //========================
    //Getting Topocluster informtions and searching for matches 
@@ -42,7 +41,6 @@ void Topocluster(TLorentzVector particle,TTreeReaderArray<unsigned int>& TopoClu
          {
             pt=temp_pt;
             id=topo;
-
          }
       }          
    }
@@ -60,8 +58,7 @@ void Topocluster(TLorentzVector particle,TTreeReaderArray<unsigned int>& TopoClu
       Lambda=TopoCluLamda[id];
       Lambda2=TopoCluLamda2[id];
       Radius=TopoCluR2[id];
-      if(TopoCellSig[id]>7) muoncheck=1;
-      CellSig->Fill(TopoCellSig[id]);
+
       FVariableHist->Fill(FVariable);
       EMCal->Fill(EMprop);
       LambdaHist->Fill(Lambda/1000);

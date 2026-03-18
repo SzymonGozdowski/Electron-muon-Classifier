@@ -8,7 +8,7 @@
 #include <string>
 #include <TLegend.h>
 #include <vector>
-#include "Topocluster.C"
+#include "OldTopocluster.C"
 
 
 void MCAnalysis()
@@ -30,12 +30,12 @@ void MCAnalysis()
         if(choice==0)
         {
             File="Data/mc_jpsi_ee.root";
-            name="MCElectronFullCalo";
+            name="MCElectronFull";
         }
         else if(choice==1)
         {
             File="Data/mc_jpsi_mumu.root";
-            name="MCMuonFullCalo";
+            name="MCMuonFull";
         }
 
         //========================
@@ -52,7 +52,6 @@ void MCAnalysis()
         float Lambda2;
         float Radius;
         float EtaRange;
-        bool  HasCalo;
         bool  IsMuon;
 
         TFile *file = new TFile(Form("Data/MLData%s.root",name.c_str()), "RECREATE");
@@ -68,7 +67,6 @@ void MCAnalysis()
         MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
         MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
         MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
-        MLDataTree->Branch("HasCalo", &HasCalo, "HasCalo/B");
 
         MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
@@ -207,7 +205,7 @@ void MCAnalysis()
                 
                 TLorentzVector dipartic;
                 dipartic=t[0]+t[1];
-                if(dipartic.Perp()<0.2 && dipartic.M()<3.2)
+                if(dipartic.Perp()<0.2 && dipartic.M()<3.5)
                 {
                     
                     Pt->Fill(dipartic.Perp());
@@ -244,9 +242,7 @@ void MCAnalysis()
                             Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
                             
-                            //if(FVariable==-1) continue; 
-                            if(FVariable==-1) HasCalo=0;
-                            else HasCalo=1;          
+                            //if(FVariable==-1) continue;           
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
                             PixeldEdX=TrackPixeldEdX[i];
@@ -282,9 +278,7 @@ void MCAnalysis()
                             Topocluster(Muon[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                                 CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon, FVariable, EMprop,Lambda2, Lambda, Radius);
 
-                            //if(FVariable==-1) continue;
-                            if(FVariable==-1) HasCalo=0;
-                            else HasCalo=1;
+                            if(FVariable==-1) continue;
                             
                             PixelHits=TrackPixelHits[i];
                             PixelTRTHits=TrackTRTHits[i];
@@ -393,33 +387,33 @@ void MCAnalysis()
         c1.cd(1);
         H_ElPixelHits->SetTitle("PixelHits");
         H_ElPixelHits->SetLineColor(kBlue);
-        H_MuPixelHits->SetLineColor(kOrange);
-        H_ElPixelHits->Draw("HIST");
-        H_MuPixelHits->Draw("HIST SAME");
+        H_MuPixelHits->SetLineColor(kRed);
+        H_ElPixelHits->Draw("HIST SAME");
+        H_MuPixelHits->Draw("HIST ");
         leg->Draw();
 
         c1.cd(2);
         H_ElPixelHits->SetTitle("PixelTRTHits");
         H_ElPixelTRTHits->SetLineColor(kBlue);
-        H_MuPixelTRTHits->SetLineColor(kOrange);
-        H_ElPixelTRTHits->Draw("HIST");
-        H_MuPixelTRTHits->Draw("HIST SAME");
+        H_MuPixelTRTHits->SetLineColor(kRed);
+        H_ElPixelTRTHits->Draw("HIST SAME");
+        H_MuPixelTRTHits->Draw("HIST ");
         leg->Draw();
 
         c1.cd(3);
         H_ElPixelHits->SetTitle("PixelSCTHits");
         H_ElPixelSCTHits->SetLineColor(kBlue);
-        H_MuPixelSCTHits->SetLineColor(kOrange);
-        H_ElPixelSCTHits->Draw("HIST");
-        H_MuPixelSCTHits->Draw("HIST SAME");
+        H_MuPixelSCTHits->SetLineColor(kRed);
+        H_ElPixelSCTHits->Draw("HIST SAME");
+        H_MuPixelSCTHits->Draw("HIST ");
         leg->Draw();
 
         c1.cd(4);
         H_ElPixelHits->SetTitle("PixeldEdX");
         H_ElPixeldEdX->SetLineColor(kBlue);
-        H_MuPixeldEdX->SetLineColor(kOrange);
-        H_ElPixeldEdX->Draw("HIST");
-        H_MuPixeldEdX->Draw("HIST SAME");
+        H_MuPixeldEdX->SetLineColor(kRed);
+        H_ElPixeldEdX->Draw("HIST SAME");
+        H_MuPixeldEdX->Draw("HIST ");
         leg->Draw();
 
         c1.SaveAs(Form("Plots/%s.pdf", name.c_str()));
@@ -429,33 +423,33 @@ void MCAnalysis()
         c1.cd(1);
         CountMuon->SetTitle("Number of topoclusters");
         CountElec->SetLineColor(kBlue);
-        CountMuon->SetLineColor(kOrange);
-        CountElec->Draw("HIST");
-        CountMuon->Draw("HIST SAME");
+        CountMuon->SetLineColor(kRed);
+        CountElec->Draw("HIST SAME");
+        CountMuon->Draw("HIST ");
         leg->Draw();
 
         c1.cd(2);
         PerpElec->SetTitle("Travsersal momentum");
         PerpElec->SetLineColor(kBlue);
-        PerpMuon->SetLineColor(kOrange);
-        PerpElec->Draw("HIST");
-        PerpMuon->Draw("HIST SAME");
+        PerpMuon->SetLineColor(kRed);
+        PerpElec->Draw("HIST SAME");
+        PerpMuon->Draw("HIST ");
         leg->Draw();
 
         c1.cd(3);
         FElec->SetTitle("F variable");
         FElec->SetLineColor(kBlue);
-        FMuon->SetLineColor(kOrange);
-        FMuon->Draw("HIST");
-        FElec->Draw("HIST SAME");
+        FMuon->SetLineColor(kRed);
+        FMuon->Draw("HIST SAME");
+        FElec->Draw("HIST ");
         leg->Draw();
 
         c1.cd(4);
         EMElec->SetTitle("EMCalorimetr probality");
         EMElec->SetLineColor(kBlue);
-        EMMuon->SetLineColor(kOrange);
-        EMElec->Draw("HIST");
-        EMMuon->Draw("HIST SAME");
+        EMMuon->SetLineColor(kRed);
+        EMElec->Draw("HIST SAME");
+        EMMuon->Draw("HIST ");
         
         leg->Draw();
         c1.SaveAs(Form("Plots/%s.pdf", name.c_str()));
@@ -465,25 +459,25 @@ void MCAnalysis()
         c1.cd(1);
         LambdaElec->SetTitle("Cluster's lambda");
         LambdaElec->SetLineColor(kBlue);
-        LambdaMuon->SetLineColor(kOrange);
-        LambdaElec->Draw("HIST");
-        LambdaMuon->Draw("HIST SAME");
+        LambdaMuon->SetLineColor(kRed);
+        LambdaElec->Draw("HIST SAME");
+        LambdaMuon->Draw("HIST ");
         leg->Draw();
 
         c1.cd(2);
         Lambda2Elec->SetTitle("Cluster's lambda2");
         Lambda2Elec->SetLineColor(kBlue);
-        Lambda2Muon->SetLineColor(kOrange);
-        Lambda2Elec->Draw("HIST");
-        Lambda2Muon->Draw("HIST SAME");
+        Lambda2Muon->SetLineColor(kRed);
+        Lambda2Elec->Draw("HIST SAME");
+        Lambda2Muon->Draw("HIST ");
         leg->Draw();
 
         c1.cd(3);
         RadiusElec->SetTitle("Cluster's radius");
         RadiusElec->SetLineColor(kBlue);
-        RadiusMuon->SetLineColor(kOrange);
-        RadiusElec->Draw("HIST");
-        RadiusMuon->Draw("HIST SAME");
+        RadiusMuon->SetLineColor(kRed);
+        RadiusElec->Draw("HIST SAME");
+        RadiusMuon->Draw("HIST ");
         leg->Draw();
 
 

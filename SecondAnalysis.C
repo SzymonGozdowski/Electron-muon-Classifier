@@ -10,7 +10,7 @@
 #include <string>
 #include <TLegend.h>
 #include <vector>
-#include "Topocluster.C"
+#include "OldTopocluster.C"
 
 
 void SecondAnalysis()
@@ -46,7 +46,6 @@ void SecondAnalysis()
     float Lambda2;
     float Radius;
     float EtaRange;
-    float HasCalo;
     bool  IsMuon;
 
     TFile *file = new TFile(Form("Data/MLFinalData%s.root",name.c_str()), "RECREATE");
@@ -62,7 +61,6 @@ void SecondAnalysis()
     MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
     MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
     MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
-    MLDataTree->Branch("HasCalo", &HasCalo, "HasCalo/F");
     MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
     //========================
@@ -126,15 +124,15 @@ void SecondAnalysis()
     TTreeReaderArray<float> TopoCluR2(tree_reader, "topo_cluster_r2");
     TTreeReaderArray<float> TopoCluEMProb(tree_reader, "topo_cluster_EM_prob");
     TTreeReaderArray<bool> TopoCluPass(tree_reader, "topo_cluster_pass_sig_cut");
-
+  
 
 
     //========================
     //Creating histograms
     //========================
     TH1D *Number = new TH1D("Number","Number",6,-0.5,5.5);
-    TH1D *Response = new TH1D("Response","Response",100,0,1);
-    TH1D *ResponseDiffrend = new TH1D("ResponseDiffrend","ResponseDiffrend",100,-1,1);
+    TH1D *Response = new TH1D("Response","MCRF Response to Experiment data",50,0,1);
+    TH1D *ResponseDiffrend = new TH1D("ResponseDiffrend","ResponseDiffrend",100,0,1);
     TH1D *ResponseOneFound = new TH1D("ResponseOneFound","ResponseOneFound",100,0,1);
 
     TH1D *DeltaPhi = new TH1D("DeltaPhi","DeltaPhi",100,0,3.5);
@@ -151,8 +149,8 @@ void SecondAnalysis()
         double min=etarange*0.5;
         double max=min+0.5;
        //DiMassEta[etarange] = TH1D(Form("dimassEta%d",etarange),Form("Lepton pair mass: Eta: %d - %d",min,max),50,2.9,3.2);
-        DiMassElEta[etarange] = new TH1D(Form("dimassElEta%d",etarange),Form("Lepton pair mass: Eta: %g - %g",min,max),50,2.5,3.5);
-        DiMassMuEta[etarange] = new TH1D(Form("dimassMuEta%d",etarange),Form("Lepton pair mass: Eta: %g - %g",min,max),50,2.5,3.5);
+        DiMassElEta[etarange] = new TH1D(Form("dimassElEta%d",etarange),Form("Lepton pair mass: Eta: %g - %g",min,max),40,2.5,3.5);
+        DiMassMuEta[etarange] = new TH1D(Form("dimassMuEta%d",etarange),Form("Lepton pair mass: Eta: %g - %g",min,max),40,2.5,3.5);
     }
 
     TH1D *Pt = new TH1D("Pt","Transverse momentum of lepton pair",50,0,0.2);
@@ -246,7 +244,7 @@ void SecondAnalysis()
             
             TLorentzVector dipartic;
             dipartic=t[0]+t[1];
-            if(dipartic.Perp()<0.2 && dipartic.M()<3.2)// && dipartic.M()>2.7)
+            if(dipartic.Perp()<0.2 && dipartic.M()<3.5)// && dipartic.M()>2.7)
             {
             
                 Pt->Fill(dipartic.Perp());
@@ -281,11 +279,10 @@ void SecondAnalysis()
                     PixelTRTHits=TrackTRTHits[i];
                     PixeldEdX=TrackPixeldEdX[i];
                     PixelSCTHits=TrackSCTHits[i];
-                    //if(FVariable==-1) continue;              
-                    if(FVariable==-1) HasCalo=0;
-                    else HasCalo=1;
-                    std::vector<float> input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius, HasCalo};
-                    std::vector<int64_t> input_shape = {1, 10};
+                    if(FVariable==-1) continue;              
+
+                    std::vector<float> input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius};
+                    std::vector<int64_t> input_shape = {1, 9};
                     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(allocator.GetInfo(),input.data(),input.size(),input_shape.data(),input_shape.size());
                     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, &input_name, &input_tensor, 1, output_names, 2);
                     float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
@@ -302,38 +299,39 @@ void SecondAnalysis()
                 {
                     if(response[0]==probcut)
                     {
-                        if(response[1]<probcut) lepton=0;
-                        else if(response[1]>probcut) lepton=1;
+                        if(response[1]<probcut-0.15) lepton=0;
+                        else if(response[1]>probcut+0.15) lepton=1;
                         ResponseOneFound->Fill(response[1]);
-                        rightlepton=1;
+
                     } 
                     else if(response[1]==probcut)
                     {
-                        if(response[0]<probcut) lepton=0;
-                        else if(response[0]>probcut) lepton=1;
+                        if(response[0]<probcut-0.15) lepton=0;
+                        else if(response[0]>probcut+0.15) lepton=1;
                         ResponseOneFound->Fill(response[0]);
-                        rightlepton=0;
-
                     } 
                     oneparticle+=2;
                 } 
                 else if(Found==2) 
                 {
                     twoparticle+=2;
-                    if(response[0]<probcut && response[1]<probcut) lepton=0;
-                    else if(response[0]>probcut && response[1]>probcut) lepton=1;
+                    if((response[0]+response[1])/2<probcut-0.15) lepton=0;
+                    else if((response[0]+response[1])/2>probcut+0.15) lepton=1;
                     else
                     {
-                        ResponseDiffrend->Fill((response[0]+response[1])/2);
                         diffrentparticle+=2;
+                        Found=0;
+                        ResponseDiffrend->Fill(response[0]);
+
                     } 
+
                 }
                 
 
                 //========================
                 //Saving electron data  
                 //========================
-                if(lepton==0&& Found==2) // && dipartic.M()<3 
+                if(lepton==0 && Found>=1) // && dipartic.M()<3 
                 {
                     for(int i=0;i<2;i++)
                     {
@@ -381,7 +379,7 @@ void SecondAnalysis()
                 //========================
                 //Saving muon data  
                 //========================
-                if(lepton==1  && Found==2)//&& dipartic.M()>2.9
+                if(lepton==1  && Found>=1)//&& dipartic.M()>2.9
                 {
                     for(int i=0;i<2;i++)
                     {
@@ -440,7 +438,6 @@ void SecondAnalysis()
     cout<<"             One particle: "<<oneparticle<<" Ratio "<<oneparticle/allparticles<<endl;
     cout<<"             Zero particles: "<<zeroparticle<<" Ratio "<<zeroparticle/allparticles<<endl;
     cout<<"             Diffrent particles: "<<diffrentparticle<<endl;
-
     cout<<"==========================="<<endl;
 
     //gStyle->SetOptStat(000000);
@@ -504,7 +501,7 @@ void SecondAnalysis()
     
     c1.Clear();
     DiMassMu->GetXaxis()->SetTitle("M_{ll} [GeV]");
-    DiMassEl->SetLineColor(kOrange);
+    DiMassEl->SetLineColor(kRed);
     DiMassMu->SetLineColor(kBlue);
     DiMassMu->Draw();
     DiMassEl->Draw("same");
@@ -521,7 +518,7 @@ void SecondAnalysis()
 
         DiMassMuEta[etarange]->GetYaxis()->SetRangeUser(0, totalMax * 1.1);
         DiMassMuEta[etarange]->GetXaxis()->SetTitle("M_{ll} [GeV]");
-        DiMassElEta[etarange]->SetLineColor(kOrange);
+        DiMassElEta[etarange]->SetLineColor(kRed);
         DiMassMuEta[etarange]->SetLineColor(kBlue);
         DiMassMuEta[etarange]->Draw();
         DiMassElEta[etarange]->Draw("same");
@@ -556,6 +553,36 @@ void SecondAnalysis()
     MuonPhi->Draw();
     c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
     c1.SaveAs(Form("Plots/2%s.pdf]", name.c_str()));
+    gStyle->SetOptStat(000000);
+
+    c1.Clear();
+    c1.Divide(3,2);
+    for(int etarange=0;etarange<5;etarange++)
+    {   
+        c1.cd(etarange+1);
+        
+        double maxMu = DiMassMuEta[etarange]->GetMaximum();
+        double maxEl = DiMassElEta[etarange]->GetMaximum();
+        double totalMax = (maxMu > maxEl) ? maxMu : maxEl;
+        DiMassMuEta[etarange]->GetYaxis()->SetRangeUser(0, totalMax * 1.05);
+        DiMassMuEta[etarange]->GetXaxis()->SetTitle("M_{ll} [GeV]");
+        DiMassElEta[etarange]->SetLineColor(kRed);
+        DiMassMuEta[etarange]->SetLineColor(kBlue);
+        DiMassElEta[etarange]->SetLineWidth(2);
+        DiMassMuEta[etarange]->SetLineWidth(2);
+        DiMassMuEta[etarange]->Draw();
+        DiMassElEta[etarange]->Draw("same");
+        leg2->Draw();
+    }
+    c1.SaveAs("Plots/PaperHist.pdf");
+
+    c1.Clear();
+    Response->SetLineWidth(2);
+    Response->Draw();
+    c1.SaveAs("Plots/ResponseHist.pdf");
+
+
+    
 
     MLDataTree->Write();
     file->Close();
