@@ -23,6 +23,9 @@ os.makedirs("Plots", exist_ok=True)
 #========================
 # Importing training data
 #========================
+# Ustawia bazowy rozmiar czcionki na 14 (domyślnie jest ok. 10)
+plt.rcParams.update({'font.size': 14})
+
 print("Importing training data...")
 with uproot.open("Data/MLDataTrueData.root") as f:
     df_test = f["MLDataTree"].arrays(library="pd")
@@ -201,3 +204,54 @@ print("PDF : Plots/RF_test_output.pdf")
 print("Model trained on: MLFinalDataTrueData.root")
 print("Tested on: MLDataMCElectron.root + MLDataMCMuon.root")
 print("="*70)
+
+
+# ========================================================
+# EKSPORT OSOBNYCH PLIKÓW PNG (Dla FullRange / eta=0)
+# ========================================================
+print("\nGenerowanie osobnych plików PNG dla FullRange...")
+
+# Przygotowanie danych dla całego zakresu
+X_full_test = df_test[features_list]
+y_full_test = df_test['IsMuon']
+y_full_proba = rf.predict_proba(X_full_test)[:, 1]
+
+# 1. Wykres ROC Curve
+plt.figure(figsize=(8, 6))
+fpr, tpr, _ = roc_curve(y_full_test, y_full_proba)
+auc_score = auc(fpr, tpr)
+plt.plot(fpr, tpr, color='darkorange', lw=3, label=f'ROC curve (area = {auc_score:.4f})')
+plt.plot([0, 1], [0, 1], color='navy', lw=3, linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - tagged')
+plt.legend(loc="lower right")
+plt.grid(alpha=0.3)
+plt.savefig("Plots/ROC_FullRange_tagged.png", dpi=300)
+plt.close()
+
+# 2. Wykres Response (Score Distribution)
+plt.figure(figsize=(8, 6))
+plt.hist(y_full_proba[y_full_test == 0], bins=50, density=True, alpha=0.6, label='Electron', color='blue')
+plt.hist(y_full_proba[y_full_test == 1], bins=50, density=True, alpha=0.4, label='Muon', color='red', hatch='//')
+plt.xlabel('Classifier Score (Probability of being Muon)')
+plt.ylabel('Normalized counts')
+plt.title('Classifier Response - tagged')
+plt.legend(loc='upper center')
+plt.grid(alpha=0.3)
+plt.savefig("Plots/Response_FullRange_tagged.png", dpi=300)
+plt.close()
+
+# 3. Wykres Feature Importance (Parametry)
+plt.figure(figsize=(10, 6))
+importances = rf.feature_importances_
+indices = np.argsort(importances)
+plt.title('Feature Importances - Random Forest - tagged')
+plt.barh(range(len(indices)), importances[indices], color='skyblue', align='center')
+plt.yticks(range(len(indices)), [features_list[i] for i in indices])
+plt.xlabel('Relative Importance')
+plt.tight_layout()
+plt.savefig("Plots/Features_Importance_tagged.png", dpi=300)
+plt.close()
+
+print("Pliki PNG zostały zapisane w folderze Plots/.")

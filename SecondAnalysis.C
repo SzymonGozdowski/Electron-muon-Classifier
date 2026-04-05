@@ -248,7 +248,7 @@ void SecondAnalysis()
             {
             
                 Pt->Fill(dipartic.Perp());
-                Rapidity->Fill(dipartic.Rapidity());
+                Rapidity->Fill(dipartic.Eta());
                 DiMass->Fill(dipartic.M());
                 //========================
                 //Cut on Bethe-Heitler
@@ -301,6 +301,7 @@ void SecondAnalysis()
                     {
                         if(response[1]<probcut-0.15) lepton=0;
                         else if(response[1]>probcut+0.15) lepton=1;
+                        else Found=0;
                         ResponseOneFound->Fill(response[1]);
 
                     } 
@@ -308,6 +309,7 @@ void SecondAnalysis()
                     {
                         if(response[0]<probcut-0.15) lepton=0;
                         else if(response[0]>probcut+0.15) lepton=1;
+                        else Found=0;
                         ResponseOneFound->Fill(response[0]);
                     } 
                     oneparticle+=2;
@@ -332,7 +334,17 @@ void SecondAnalysis()
                 //Saving electron data  
                 //========================
                 if(lepton==0 && Found>=1) // && dipartic.M()<3 
-                {
+                {   
+                    DiMassEl->Fill(dipartic.M());
+                    for(int etarange=0;etarange<5;etarange++)
+                        {   
+                            double max=etarange*0.5+0.5;
+                            if(abs(dipartic.Rapidity())< max)
+                            {
+                                DiMassElEta[etarange]->Fill(dipartic.M());
+                                break;
+                            }  
+                        }
                     for(int i=0;i<2;i++)
                     {
                        
@@ -346,7 +358,6 @@ void SecondAnalysis()
                         ElectronEta->Fill(Electron[i].Eta());
                         ElectronPt->Fill(Electron[i].Pt());
                         ElectronPhi->Fill(Electron[i].Phi());
-                        DiMassEl->Fill(dipartic.M());
                         
                         Topocluster(Electron[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                             CountElec,PerpElec,FElec,EMElec,LambdaElec,Lambda2Elec,RadiusElec,FVariable,EMprop,Lambda2,Lambda,Radius);
@@ -362,16 +373,7 @@ void SecondAnalysis()
                         IsMuon=0;
                         MLDataTree->Fill();
                         EtaRangeHist->Fill(EtaRange);
-                        for(int etarange=0;etarange<5;etarange++)
-                        {   
-                            double max=etarange*0.5+0.5;
-                            if(abs(Electron[i].Eta())< max)
-                            {
-                                DiMassElEta[etarange]->Fill(dipartic.M());
-                                break;
-                            }  
-                        }
-                        DiMassEl->Fill(dipartic.M());
+                        
                         electroncount++;
                     } 
 
@@ -381,6 +383,16 @@ void SecondAnalysis()
                 //========================
                 if(lepton==1  && Found>=1)//&& dipartic.M()>2.9
                 {
+                    DiMassMu->Fill(dipartic.M());
+                    for(int etarange=0;etarange<=5;etarange++)
+                        {   
+                            double max=etarange*0.5+0.5;
+                            if(abs(dipartic.Rapidity())< max)
+                            {
+                                DiMassMuEta[etarange]->Fill(dipartic.M());
+                                break;
+                            }  
+                        }
                     for(int i=0;i<2;i++)
                     {
                       
@@ -410,16 +422,7 @@ void SecondAnalysis()
                         else if(abs(Muon[i].Eta())>1.5 && abs(Muon[i].Eta())<2.5) EtaRange=3;
                         MLDataTree->Fill();
                         EtaRangeHist->Fill(EtaRange);
-                        for(int etarange=0;etarange<=5;etarange++)
-                        {   
-                            double max=etarange*0.5+0.5;
-                            if(abs(Muon[i].Eta())< max)
-                            {
-                                DiMassMuEta[etarange]->Fill(dipartic.M());
-                                break;
-                            }  
-                        }
-                        DiMassMu->Fill(dipartic.M());
+                        
                         muoncount++;
                     }  
                 }
@@ -555,26 +558,40 @@ void SecondAnalysis()
     c1.SaveAs(Form("Plots/2%s.pdf]", name.c_str()));
     gStyle->SetOptStat(000000);
 
-    c1.Clear();
-    c1.Divide(3,2);
+    double current_bin_width = DiMassMuEta[0]->GetBinWidth(1); // To zwróci 0.025
+    double scale_factor = 0.01 / current_bin_width; // Wynik to 0.4
+
+// 2. Przeskaluj oba histogramy
+
     for(int etarange=0;etarange<5;etarange++)
     {   
-        c1.cd(etarange+1);
-        
+ 
+        c1.Clear();
+        DiMassMuEta[etarange]->Scale(scale_factor);
+        DiMassElEta[etarange]->Scale(scale_factor);
         double maxMu = DiMassMuEta[etarange]->GetMaximum();
         double maxEl = DiMassElEta[etarange]->GetMaximum();
         double totalMax = (maxMu > maxEl) ? maxMu : maxEl;
         DiMassMuEta[etarange]->GetYaxis()->SetRangeUser(0, totalMax * 1.05);
+        DiMassMuEta[etarange]->GetXaxis()->SetTitleSize(0.05);
+        DiMassMuEta[etarange]->GetYaxis()->SetTitleSize(0.05);
+        DiMassMuEta[etarange]->GetYaxis()->SetTitle("Events/0.01 GeV");
+
         DiMassMuEta[etarange]->GetXaxis()->SetTitle("M_{ll} [GeV]");
         DiMassElEta[etarange]->SetLineColor(kRed);
         DiMassMuEta[etarange]->SetLineColor(kBlue);
         DiMassElEta[etarange]->SetLineWidth(2);
         DiMassMuEta[etarange]->SetLineWidth(2);
-        DiMassMuEta[etarange]->Draw();
-        DiMassElEta[etarange]->Draw("same");
+        gPad->SetLeftMargin(0.14);   // Więcej miejsca z lewej na opis osi Y
+        gPad->SetBottomMargin(0.15); // Więcej miejsca na dole na opis osi X
+        gPad->SetRightMargin(0.05);  // Zmniejszenie prawego marginesu (opcjonalnie)
+        gPad->SetTopMargin(0.08);
+        DiMassMuEta[etarange]->Draw("HIST");
+        DiMassElEta[etarange]->Draw("HIST SAME");
         leg2->Draw();
+        c1.SaveAs(Form("Plots/Paper/PaperHist%d.png",etarange));
+
     }
-    c1.SaveAs("Plots/PaperHist.pdf");
 
     c1.Clear();
     Response->SetLineWidth(2);

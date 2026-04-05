@@ -211,14 +211,7 @@ void MCAnalysis()
                     Pt->Fill(dipartic.Perp());
                     Rapidity->Fill(dipartic.Rapidity());
                     DiMass->Fill(dipartic.M());
-                    //========================
-                    //Cut on Bethe-Heitler
-                    //========================
-                    TVector3 b = dipartic.BoostVector();
-                    TLorentzVector t_prim0, t_prim1;
-                    t_prim0=t[0];// t_prim0.Boost(b);
-                    t_prim1=t[1];// t_prim1.Boost(b);
-                    PhiDiffHist->Fill(acos(cos(t_prim0.Phi()-t_prim1.Phi()))*DEG);
+
                     //========================
                     //Saving electron data  
                     //========================
