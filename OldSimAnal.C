@@ -8,7 +8,7 @@
 #include <string>
 #include <TLegend.h>
 #include <vector>
-#include "OldTopo.C"
+#include "OldTopocluster.C"
 
 
 void OldSimAnal()
@@ -132,7 +132,7 @@ void OldSimAnal()
         TH1D *HRadEtaPhi = new TH1D("RadEtaPhi","RadEtaPhi",100,0,8);
         TH1D *EtaRangeHist = new TH1D("EtaRangeHist","EtaRangeHist",3,0.5,3.5);
 
-        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2.9,3.2);
+        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,1.5,3.9);
         TH1D *DiMassEl = new TH1D("dimassEl","Lepton pair mass",50,1.5,3.9);
         TH1D *DiMassMu = new TH1D("dimassMu","Lepton pair mass",50,1.5,3.9);
 
@@ -210,7 +210,7 @@ void OldSimAnal()
                 
                 TLorentzVector dipartic;
                 dipartic=t[0]+t[1];
-                if(dipartic.Perp()<0.2 && dipartic.M()<3.2)
+                if(dipartic.Perp()<0.2 && dipartic.M()<3.5)
                 {
                     if(dipartic.M()>2.9)
                     {

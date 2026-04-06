@@ -24,12 +24,13 @@ void Efficiency()
     double DEG  = 180 / TMath::Pi();
 
     vector<TString> files(3);
-    files[0] = "Data/data23_2trk_moreTCvars.root";
-    files[1] = "Data/mc_jpsi_ee.root";
-    files[2] = "Data/mc_jpsi_mumu.root";
+    files[0] = "Data/mc_jpsi_ee.root";
+    files[1] = "Data/mc_jpsi_mumu.root";
+    files[2] = "Data/data23_2trk_moreTCvars.root";
 
-    TString fileLabels[3] = {"Data", "MC ee", "MC #mu#mu"};
-    int     fileColors[3] = {kBlack, kRed, kBlue};
+
+    TString fileLabels[3] = { "MC ee", "MC #mu#mu","Data"};
+    int     fileColors[3] = { kRed, kBlue, kBlack};
 
     float PixelHits, PixelTRTHits, PixeldEdX, PixelSCTHits;
     float FVariable, EMprop, Lambda, Lambda2, Radius, EtaRange;
@@ -87,11 +88,11 @@ void Efficiency()
         for (int eta = 0; eta < 5; eta++) {
             double maxEta = (eta + 1) * 0.5;
             DiMassEta[eta][f] = new TH1D(Form("DiMassEta_%d_%d", eta, f),
-                Form("l^{+}l^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2.5, 3.5);
+                Form("l^{+}l^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2, 3.5);
             DiMassElEta[eta][f] = new TH1D(Form("DiMassElEta_%d_%d", eta, f),
-                Form("e^{+}e^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2.5, 3.5);
+                Form("e^{+}e^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2, 3.5);
             DiMassMuEta[eta][f] = new TH1D(Form("DiMassMuEta_%d_%d", eta, f),
-                Form("#mu^{+}#mu^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2.5, 3.5);
+                Form("#mu^{+}#mu^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 50, 2, 3.5);
         }
     }
 
@@ -383,50 +384,49 @@ void Efficiency()
     }
 
     // --- 2. Po odjeciu tla - osobna strona dla kazdego pliku ---
-    for (int f = 0; f < 3; f++) {
-        TH1D *DiMassElSub = (TH1D*)DiMassEl[f]->Clone(Form("DiMassElSub_%d", f));
-        TH1D *DiMassMuSub = (TH1D*)DiMassMu[f]->Clone(Form("DiMassMuSub_%d", f));
-        TH1D *DiMassSub   = (TH1D*)DiMass[f]->Clone(Form("DiMassSub_%d",   f));
+    TH1D *DiMassElSub = (TH1D*)DiMassEl[2]->Clone("DiMassElSub_2");
+    TH1D *DiMassMuSub = (TH1D*)DiMassMu[2]->Clone("DiMassMuSub_2");
+    TH1D *DiMassSub   = (TH1D*)DiMass[2]->Clone("DiMassSub_2");
 
-        for (int i = 1; i <= DiMassElSub->GetNbinsX(); i++) {
-            double bc = DiMassElSub->GetBinCenter(i);
-            double bw = DiMassElSub->GetBinWidth(i);
-            double bg = drawFuncEl[f]->Integral(bc - bw/2, bc + bw/2) / bw;
-            DiMassElSub->SetBinContent(i, DiMassElSub->GetBinContent(i) - bg);
-        }
-        for (int i = 1; i <= DiMassMuSub->GetNbinsX(); i++) {
-            double bc = DiMassMuSub->GetBinCenter(i);
-            double bw = DiMassMuSub->GetBinWidth(i);
-            double bg = drawFuncMu[f]->Integral(bc - bw/2, bc + bw/2) / bw;
-            DiMassMuSub->SetBinContent(i, DiMassMuSub->GetBinContent(i) - bg);
-        }
-        for (int i = 1; i <= DiMassSub->GetNbinsX(); i++) {
-            double bc = DiMassSub->GetBinCenter(i);
-            double bw = DiMassSub->GetBinWidth(i);
-            double bg = drawFuncEl[f]->Integral(bc - bw/2, bc + bw/2) / bw
-                      + drawFuncMu[f]->Integral(bc - bw/2, bc + bw/2) / bw;
-            DiMassSub->SetBinContent(i, DiMassSub->GetBinContent(i) - bg);
-        }
-
-        c1.Clear();
-        DiMassSub->SetTitle(Form("Background subtracted - %s; M_{ll} [GeV]; Counts", fileLabels[f].Data()));
-        DiMassSub->SetLineColor(kBlack);
-        DiMassElSub->SetLineColor(kRed);
-        DiMassMuSub->SetLineColor(kBlue);
-        DiMassSub->Draw("HIST");
-        DiMassMuSub->Draw("HIST SAME");
-        DiMassElSub->Draw("HIST SAME");
-
-        TLegend *legSub = new TLegend(0.65, 0.65, 0.9, 0.85);
-        legSub->SetBorderSize(0);
-        legSub->SetTextFont(42);
-        legSub->SetTextSize(0.04);
-        legSub->AddEntry(DiMassSub,   "All",      "l");
-        legSub->AddEntry(DiMassElSub, "Electron", "l");
-        legSub->AddEntry(DiMassMuSub, "Muon",     "l");
-        legSub->Draw();
-        c1.SaveAs("Plots/Efficiency.pdf");
+    for (int i = 1; i <= DiMassElSub->GetNbinsX(); i++) {
+        double bc = DiMassElSub->GetBinCenter(i);
+        double bw = DiMassElSub->GetBinWidth(i);
+        double bg = drawFuncEl[2]->Integral(bc - bw/2, bc + bw/2) / bw;
+        DiMassElSub->SetBinContent(i, DiMassElSub->GetBinContent(i) - bg);
     }
+    for (int i = 1; i <= DiMassMuSub->GetNbinsX(); i++) {
+        double bc = DiMassMuSub->GetBinCenter(i);
+        double bw = DiMassMuSub->GetBinWidth(i);
+        double bg = drawFuncMu[2]->Integral(bc - bw/2, bc + bw/2) / bw;
+        DiMassMuSub->SetBinContent(i, DiMassMuSub->GetBinContent(i) - bg);
+    }
+    for (int i = 1; i <= DiMassSub->GetNbinsX(); i++) {
+        double bc = DiMassSub->GetBinCenter(i);
+        double bw = DiMassSub->GetBinWidth(i);
+        double bg = drawFuncEl[2]->Integral(bc - bw/2, bc + bw/2) / bw
+                    + drawFuncMu[2]->Integral(bc - bw/2, bc + bw/2) / bw;
+        DiMassSub->SetBinContent(i, DiMassSub->GetBinContent(i) - bg);
+    }
+
+    c1.Clear();
+    DiMassSub->SetTitle(Form("Background subtracted - %s; M_{ll} [GeV]; Counts", fileLabels[2].Data()));
+    DiMassSub->SetLineColor(kBlack);
+    DiMassElSub->SetLineColor(kRed);
+    DiMassMuSub->SetLineColor(kBlue);
+    DiMassSub->Draw("HIST");
+    DiMassMuSub->Draw("HIST SAME");
+    DiMassElSub->Draw("HIST SAME");
+
+    TLegend *legSub = new TLegend(0.65, 0.65, 0.9, 0.85);
+    legSub->SetBorderSize(0);
+    legSub->SetTextFont(42);
+    legSub->SetTextSize(0.04);
+    legSub->AddEntry(DiMassSub,   "All",      "l");
+    legSub->AddEntry(DiMassElSub, "Electron", "l");
+    legSub->AddEntry(DiMassMuSub, "Muon",     "l");
+    legSub->Draw();
+    c1.SaveAs("Plots/Efficiency.pdf");
+    
 
  // --- 3. Eta: rozklady + efficiency ---
 
@@ -643,16 +643,270 @@ for (int f = 0; f < 3; f++) {
             tex->DrawLatex(0.75, 0.78, Form("%.1f < |y| < %.1f", maxEta - 0.5, maxEta));
             tex->DrawLatex(0.75, 0.73, "p_{T}^{#mu#mu} < 0.2 GeV");
             c1.SaveAs("Plots/Efficiency.pdf");
-            if(f==0)
+            if(f==2)
             c1.SaveAs(Form("Plots/EFF/Efficiency%d.png",eta));
 
             
         }
         
 
-    
-       
     }
+    auto doubleCB = [](Double_t *x, Double_t *par) -> Double_t {
+        // par[0] = Norm
+        // par[1] = Mean
+        // par[2] = Sigma
+        // par[3] = Alpha_L (lewy ogon)
+        // par[4] = N_L
+        // par[5] = Alpha_R (prawy ogon)
+        // par[6] = N_R
+
+        double t = (x[0] - par[1]) / par[2];
+        double absAL = fabs(par[3]);
+        double absAR = fabs(par[5]);
+
+        if (t < -absAL) {
+            // lewy ogon
+            double a = pow(par[4] / absAL, par[4]) * exp(-0.5 * absAL * absAL);
+            double b = par[4] / absAL - absAL;
+            return par[0] * a / pow(b - t, par[4]);
+        } else if (t > absAR) {
+            // prawy ogon
+            double a = pow(par[6] / absAR, par[6]) * exp(-0.5 * absAR * absAR);
+            double b = par[6] / absAR - absAR;
+            return par[0] * a / pow(b + t, par[6]);
+        } else {
+            // gaussowski rdzeń
+            return par[0] * exp(-0.5 * t * t);
+        }
+    };
+
+    TF1 *MCmassElCb = new TF1("MCmassElCb", doubleCB, 2.5, 3.3, 7);
+
+    MCmassElCb->SetParNames("Norm", "Mean", "Sigma", "Alpha_L", "N_L", "Alpha_R", "N_R");
+    MCmassElCb->SetParameters(
+        DiMassEl[0]->GetMaximum(),  // Norm
+        3.097,                       // Mean
+        0.02,                        // Sigma
+        1.5,                         // Alpha_L
+        5.0,                         // N_L
+        1.5,                         // Alpha_R
+        5.0                          // N_R
+    );
+
+    MCmassElCb->SetParLimits(3, 0.1,   10.0);   // Alpha_L
+    MCmassElCb->SetParLimits(4, 1.0,   50.0);   // N_L
+    MCmassElCb->SetParLimits(5, 0.1,   10.0);   // Alpha_R
+    MCmassElCb->SetParLimits(6, 1.0,   50.0);   // N_R
+
+    DiMassEl[0]->Fit("MCmassElCb", "R");  // "R" = użyj zakresu z TF1
+
+    double elmean_val  = MCmassElCb->GetParameter(1);
+    double elmean_err  = MCmassElCb->GetParError(1);
+    double elchi2_ndf  = MCmassElCb->GetChisquare() / MCmassElCb->GetNDF();
+
+    
+
+    TF1 *MCmassMuCb = new TF1("MCmassMuCb", doubleCB, 2.8, 3.3, 7);
+
+    MCmassMuCb->SetParNames("Norm", "Mean", "Sigma", "Alpha_L", "N_L", "Alpha_R", "N_R");
+    MCmassMuCb->SetParameters(
+        DiMassMu[1]->GetMaximum(),  // Norm
+        3.097,                       // Mean
+        0.02,                        // Sigma
+        1.5,                         // Alpha_L
+        5.0,                         // N_L
+        1.5,                         // Alpha_R
+        5.0                          // N_R
+    );
+
+
+    MCmassMuCb->SetParLimits(3, 0.1,   10.0);   // Alpha_L
+    MCmassMuCb->SetParLimits(4, 1.0,   50.0);   // N_L
+    MCmassMuCb->SetParLimits(5, 0.1,   10.0);   // Alpha_R
+    MCmassMuCb->SetParLimits(6, 1.0,   50.0);   // N_R
+
+
+    DiMassMu[1]->Fit("MCmassMuCb", "RL");  // "R" = użyj zakresu z TF1
+
+    double mumean_val  = MCmassMuCb->GetParameter(1);
+    double mumean_err  = MCmassMuCb->GetParError(1);
+    double muchi2_ndf  = MCmassMuCb->GetChisquare() / MCmassMuCb->GetNDF();
+    
+    auto StyleRatio = [](TH1F* h, const char* yTitle) {
+        h->SetTitle("");
+        
+        // Ustawienia osi Y
+        h->GetYaxis()->SetTitle(yTitle);
+        h->GetYaxis()->SetTitleSize(0.12);
+        h->GetYaxis()->SetTitleOffset(0.35);
+        h->GetYaxis()->SetLabelSize(0.07);
+        h->GetYaxis()->CenterTitle(true);
+        
+        // KLUCZOWE: Sztywne limity, żeby wykres się nie "psuł"
+        h->SetMinimum(0.0); // Ratio nie powinno być ujemne
+        h->SetMaximum(2.0); // Pokazuj odchylenia do 100% w górę
+        
+        // Ustawienia osi X
+        h->GetXaxis()->SetTitleSize(0.14);
+        h->GetXaxis()->SetLabelSize(0.12);
+        h->GetXaxis()->SetTitle("Mass [GeV]");
+        
+        h->SetMarkerStyle(20);
+        h->SetMarkerSize(0.7);
+    };
+
+
+    // --- KANWA I PADY DLA ELEKTRONÓW ---
+    TCanvas *cPullEl = new TCanvas("cPullEl", "Fit ee", 800, 800);
+    TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
+    TPad *pad2 = new TPad("pad2", "pad2", 0, 0.0, 1, 0.3); 
+    pad1->SetBottomMargin(0.02);
+    pad2->SetTopMargin(0.02);
+    pad2->SetBottomMargin(0.35); 
+    pad1->Draw(); 
+    pad2->Draw();
+
+    pad1->cd();
+    DiMassEl[0]->Draw("E");
+    MCmassElCb->Draw("same");
+
+    pad2->cd(); // TERAZ pad2 JEST ZADEKLAROWANY WYŻEJ
+    TH1F *hRatioEl = (TH1F*)DiMassEl[0]->Clone("hRatioEl");
+    hRatioEl->Reset();
+
+    for (int i = 1; i <= DiMassEl[0]->GetNbinsX(); i++) {
+        double data_val = DiMassEl[0]->GetBinContent(i);
+        double data_err = DiMassEl[0]->GetBinError(i);
+        double model_val = MCmassElCb->Eval(DiMassEl[0]->GetBinCenter(i));
+        if (model_val > 0) {
+            hRatioEl->SetBinContent(i, data_val / model_val);
+            hRatioEl->SetBinError(i, data_err / model_val);
+        }
+    }
+    StyleRatio(hRatioEl, "Data / Fit");
+
+    hRatioEl->Draw("E0");
+
+    TLine *l1 = new TLine(hRatioEl->GetXaxis()->GetXmin(), 1.0, hRatioEl->GetXaxis()->GetXmax(), 1.0);
+    l1->SetLineColor(kRed); l1->SetLineStyle(2); l1->Draw();
+
+    cPullEl->SaveAs("Plots/CrystalBallEl_Ratio.png");
+
+
+    // --- KANWA I PADY DLA MIONÓW ---
+    TCanvas *cPullMu = new TCanvas("cPullMu", "Fit mumu", 800, 800);
+    TPad *pad11 = new TPad("pad11", "pad11", 0, 0.3, 1, 1.0);
+    TPad *pad22 = new TPad("pad22", "pad22", 0, 0.0, 1, 0.3);
+    pad11->SetBottomMargin(0.02);
+    pad22->SetTopMargin(0.02);
+    pad22->SetBottomMargin(0.35);
+    pad11->Draw(); 
+    pad22->Draw();
+
+    pad11->cd();
+    DiMassMu[1]->Draw("E");
+    MCmassMuCb->Draw("same");
+
+    pad22->cd(); // TERAZ pad22 JEST ZADEKLAROWANY WYŻEJ
+    TH1F *hRatioMu = (TH1F*)DiMassMu[1]->Clone("hRatioMu");
+    hRatioMu->Reset();
+
+    for (int i = 1; i <= DiMassMu[1]->GetNbinsX(); i++) {
+        double data_val = DiMassMu[1]->GetBinContent(i);
+        double data_err = DiMassMu[1]->GetBinError(i);
+        double model_val = MCmassMuCb->Eval(DiMassMu[1]->GetBinCenter(i));
+        if (model_val > 0) {
+            hRatioMu->SetBinContent(i, data_val / model_val);
+            hRatioMu->SetBinError(i, data_err / model_val);
+        }
+    }
+    StyleRatio(hRatioMu, "Data / Fit");
+
+    hRatioMu->Draw("E0");
+
+    TLine *l1m = new TLine(hRatioMu->GetXaxis()->GetXmin(), 1.0, hRatioMu->GetXaxis()->GetXmax(), 1.0);
+    l1m->SetLineColor(kRed); l1m->SetLineStyle(2); l1m->Draw();
+
+    cPullMu->SaveAs("Plots/CrystalBallMu_Ratio.png");
+
+    // --- PRZYGOTOWANIE FUNKCJI DO DANYCH (tylko Norm jest wolna) ---
+    // Pobieramy parametry z dopasowania MC, które już wykonałeś
+    for(int i=1; i<7; i++) {
+        MCmassMuCb->FixParameter(i, MCmassMuCb->GetParameter(i));
+    }
+
+    // Opcjonalnie: ustawiamy nową startową normalizację na maksimum nowego histogramu
+    MCmassMuCb->SetParameter(0, DiMassMuSub->GetMaximum());
+
+    // Fitowanie - teraz ROOT zmieni tylko parametr [0] (Norm)
+    DiMassMuSub->Fit("MCmassMuCb", "RL");
+
+    // --- RYSOWANIE Z RATIO PLOTEM ---
+    TCanvas *cSubMu = new TCanvas("cSubMu", "Fit Subtracted Mu", 800, 800);
+    TPad *p1m = new TPad("p1m","p1m",0,0.3,1,1);
+    TPad *p2m = new TPad("p2m","p2m",0,0,1,0.3);
+    p1m->SetBottomMargin(0.02); p2m->SetTopMargin(0.02); p2m->SetBottomMargin(0.35);
+    p1m->Draw(); p2m->Draw();
+
+    p1m->cd();
+    DiMassMuSub->SetTitle("Subtracted J/#psi #rightarrow #mu#mu;Mass [GeV];Events");
+    DiMassMuSub->Draw("E");
+    MCmassMuCb->Draw("same");
+
+    p2m->cd();
+    TH1F *hRatioSubMu = (TH1F*)DiMassMuSub->Clone("hRatioSubMu");
+    hRatioSubMu->Reset();
+    for (int i = 1; i <= DiMassMuSub->GetNbinsX(); i++) {
+        double model = MCmassMuCb->Eval(DiMassMuSub->GetBinCenter(i));
+        if (model > 0) {
+            hRatioSubMu->SetBinContent(i, DiMassMuSub->GetBinContent(i) / model);
+            hRatioSubMu->SetBinError(i, DiMassMuSub->GetBinError(i) / model);
+        }
+    }
+    StyleRatio(hRatioSubMu, "Data / Fit");
+    hRatioSubMu->Draw("E0");
+    TLine *l2m = new TLine(hRatioSubMu->GetXaxis()->GetXmin(), 1.0, hRatioSubMu->GetXaxis()->GetXmax(), 1.0);
+    l2m->SetLineColor(kRed); l2m->SetLineStyle(2); l2m->Draw();
+
+    cSubMu->SaveAs("Plots/SubtractedMu_Fit.png");
+
+    // Zamrażamy parametry kształtu dla elektronów
+    for(int i=1; i<7; i++) {
+        MCmassElCb->FixParameter(i, MCmassElCb->GetParameter(i));
+    }
+    MCmassElCb->SetParameter(0, DiMassElSub->GetMaximum());
+
+    DiMassElSub->Fit("MCmassElCb", "RL");
+
+    // Kanwa i Ratio dla elektronów
+    TCanvas *cSubEl = new TCanvas("cSubEl", "Fit Subtracted El", 800, 800);
+    TPad *p1e = new TPad("p1e","p1e",0,0.3,1,1);
+    TPad *p2e = new TPad("p2e","p2e",0,0,1,0.3);
+    p1e->SetBottomMargin(0.02); p2e->SetTopMargin(0.02); p2e->SetBottomMargin(0.35);
+    p1e->Draw(); p2e->Draw();
+
+    p1e->cd();
+    DiMassElSub->SetTitle("Subtracted J/#psi #rightarrow ee;Mass [GeV];Events");
+    DiMassElSub->Draw("E");
+    MCmassElCb->Draw("same");
+
+    p2e->cd();
+    TH1F *hRatioSubEl = (TH1F*)DiMassElSub->Clone("hRatioSubEl");
+    hRatioSubEl->Reset();
+    for (int i = 1; i <= DiMassElSub->GetNbinsX(); i++) {
+        double model = MCmassElCb->Eval(DiMassElSub->GetBinCenter(i));
+        if (model > 0) {
+            hRatioSubEl->SetBinContent(i, DiMassElSub->GetBinContent(i) / model);
+            hRatioSubEl->SetBinError(i, DiMassElSub->GetBinError(i) / model);
+        }
+    }
+    StyleRatio(hRatioSubEl, "Data / Fit");
+    hRatioSubEl->Draw("E0");
+    TLine *l1e = new TLine(hRatioSubEl->GetXaxis()->GetXmin(), 1.0, hRatioSubEl->GetXaxis()->GetXmax(), 1.0);
+    l1e->SetLineColor(kRed); l1e->SetLineStyle(2); l1e->Draw();
+
+    cSubEl->SaveAs("Plots/SubtractedEl_Fit.png");
+
 
     c1.SaveAs("Plots/Efficiency.pdf]");
 }
