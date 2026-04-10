@@ -2,12 +2,9 @@
 #include "MyAnalysis.h"
 #include <TStyle.h>
 #include <TCanvas.h>
-#include <TCanvas.h>
-#include <TLorentzVector.h>
-#include <iostream> 
-
 using namespace std;
-void Analysis::Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist, TH1D* Lambda2Hist, TH1D* RadiusHist, TH1D* TimeHist, float &FVariable, float &EMprop, float &Lambda2, float &Lambda, float &Radius, float &Time)
+void Analysis::Topocluster(TLorentzVector particle, TH1D* Count, TH1D* Perp, TH1D* FVariableHist, TH1D* EMCal, TH1D* LambdaHist, TH1D* Lambda2Hist,
+   TH1D* RadiusHist, TH1D* TimeHist, float &FVariable, float &EMprop, float &Lambda2, float &Lambda, float &Radius, float &Time)
 {
    int topo_count=0;
    double pt=0;
@@ -77,8 +74,6 @@ void Analysis::Loop()
    float Lambda2;
    float Radius;
    float Time;
-   float Eta;
-   float CellSigSampling;
    bool  IsMuon;
 
    TFile *file = new TFile("MLData.root", "RECREATE");
@@ -94,8 +89,6 @@ void Analysis::Loop()
    MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
    MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
    MLDataTree->Branch("Cal_Time", &Time, "Cal_Time/F");
-   MLDataTree->Branch("Eta", &Eta, "Eta/F");
-   MLDataTree->Branch("CellSigSampling", &CellSigSampling, "CellSigSampling/F");
    MLDataTree->Branch("IsMuon", &IsMuon, "IsMuon/B");
 
    Long64_t nentries = fChain->GetEntriesFast();
@@ -238,13 +231,11 @@ void Analysis::Loop()
                PixelTRTHits=track_TRTHits->at(1);
                PixeldEdX=track_PixeldEdX->at(1);
                PixelSCTHits=track_SCTHits->at(1);
-	       Eta=track_eta->at(1);
-	       CellSigSampling = topo_cluster_cell_sig_sampling->at(1);
                IsMuon=0;
                MLDataTree->Fill();
 
             }
-            if(!elctroncheck && dipartic.M()>2.9 && topo_cluster_cell_sig_sampling->at(0) > 7)
+            if(!elctroncheck && dipartic.M()>2.9 )
             {
                for(int i=0;i<2;i++)
                {
@@ -262,17 +253,12 @@ void Analysis::Loop()
                   Topocluster(Muon[i],CountMuon,PerpMuon,FMuon,EMMuon,LambdaMuon,Lambda2Muon,RadiusMuon,TimeMuon, FVariable, EMprop,
                      Lambda2, Lambda, Radius, Time);
 
-		  if(i==1)
-		  {
-			  PixelHits=track_PixelHits->at(i);
-			  PixelTRTHits=track_TRTHits->at(i);
-			  PixeldEdX=track_PixeldEdX->at(i);
-			  PixelSCTHits=track_SCTHits->at(i);
-			  Eta = track_eta->at(i);
-			  CellSigSampling = topo_cluster_cell_sig_sampling->at(i);
-			  IsMuon=1;
-			  MLDataTree->Fill();
-		  }
+                  PixelHits=track_PixelHits->at(i);
+                  PixelTRTHits=track_TRTHits->at(i);
+                  PixeldEdX=track_PixeldEdX->at(i);
+                  PixelSCTHits=track_SCTHits->at(i);
+                  IsMuon=1;
+                  MLDataTree->Fill();
                }
                DiMassMu->Fill(dipartic.M());
             }              
@@ -502,18 +488,6 @@ void Analysis::Loop()
    c1.Clear();
    HRadEtaPhi->Draw();
    c1.SaveAs("Plots/test.pdf");
-
-
-// Eta distribution for e/mu 
-ElectronEta->Scale(1.0 / ElectronEta->GetEntries()); // Normalize 
-MuonEta->Scale(1.0 / MuonEta->GetEntries());
-ElectronEta->SetLineColor(kRed);
-MuonEta->SetLineColor(kBlue);
-MuonEta->SetMaximum(0.1);
-MuonEta->Draw("HIST");
-ElectronEta->Draw("HIST SAME");
-leg->Draw();
-c1.SaveAs("Plots/test.pdf");
 
    c1.SaveAs("Plots/test.pdf]");
    
