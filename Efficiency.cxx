@@ -73,9 +73,9 @@ void Efficiency()
     TH1D *H_Radius  = new TH1D("H_Radius",  "Radius",  40,  0,   100);
 
     for (int f = 0; f < 3; f++) {
-        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2.5, 3.5);
-        DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2.5, 3.5);
-        DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2.5, 3.5);
+        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2, 3.5);
+        DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2, 3.5);
+        DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2, 3.5);
         EtaFull[f]       = new TH1D(Form("EtaFull_%d",f),      Form("Eta Full - %s",               fileLabels[f].Data()), 30, -3,  3);
         EnergyFull[f]    = new TH1D(Form("EnergyFull_%d",f),   Form("Energy Full - %s",            fileLabels[f].Data()), 30,  0,  6);
         EtaCalo[f]       = new TH1D(Form("EtaCalo_%d",f),      Form("Eta Calo - %s",               fileLabels[f].Data()), 30, -3,  3);
@@ -416,6 +416,7 @@ void Efficiency()
     DiMassSub->Draw("HIST");
     DiMassMuSub->Draw("HIST SAME");
     DiMassElSub->Draw("HIST SAME");
+    DiMassSub->SetMinimum(-400);
 
     TLegend *legSub = new TLegend(0.65, 0.65, 0.9, 0.85);
     legSub->SetBorderSize(0);
