@@ -42,7 +42,7 @@ void McTrueEfficiency()
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "rf");
     Ort::SessionOptions session_options;
     session_options.SetIntraOpNumThreads(1);
-    Ort::Session session(env, "Data/RFMuonElectron.onnx", session_options);
+    Ort::Session session(env, "ONNX/RFMuonElectron.onnx", session_options);
     Ort::AllocatorWithDefaultOptions allocator;
 
     auto input_name_alloc  = session.GetInputNameAllocated(0, allocator);
@@ -73,9 +73,9 @@ void McTrueEfficiency()
     TH1D *H_Radius  = new TH1D("H_Radius",  "Radius",  40,  0,   100);
 
     for (int f = 0; f < 3; f++) {
-        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2.5, 3.5);
-        DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2.5, 3.5);
-        DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2.5, 3.5);
+        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2.3, 3.5);
+        DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2.3, 3.5);
+        DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2.3, 3.5);
         EtaFull[f]       = new TH1D(Form("EtaFull_%d",f),      Form("Eta Full - %s",               fileLabels[f].Data()), 30, -3,  3);
         EnergyFull[f]    = new TH1D(Form("EnergyFull_%d",f),   Form("Energy Full - %s",            fileLabels[f].Data()), 30,  0,  6);
         EtaCalo[f]       = new TH1D(Form("EtaCalo_%d",f),      Form("Eta Calo - %s",               fileLabels[f].Data()), 30, -3,  3);
@@ -95,11 +95,11 @@ void McTrueEfficiency()
                 Form("#mu^{+}#mu^{-} mass |#eta|<%.1f - %s", maxEta, fileLabels[f].Data()), 100, 2.3, 3.5);
         }
         DiMassEta[4][f] = new TH1D(Form("DiMassEta_%d_%d", 4, f),
-            Form("l^{+}l^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.5, 3.5);
+            Form("l^{+}l^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.3, 3.5);
         DiMassElEta[4][f] = new TH1D(Form("DiMassElEta_%d_%d", 4, f),
-            Form("e^{+}e^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.5, 3.5);
+            Form("e^{+}e^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.3, 3.5);
         DiMassMuEta[4][f] = new TH1D(Form("DiMassMuEta_%d_%d", 4, f),
-            Form("#mu^{+}#mu^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.5, 3.5);
+            Form("#mu^{+}#mu^{-} mass |#eta|<%.1f - %s", 2.5, fileLabels[f].Data()), 25, 2.3, 3.5);
     }
 
     //========================
