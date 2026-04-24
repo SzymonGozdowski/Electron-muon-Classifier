@@ -25,7 +25,7 @@ void MCAnalysis()
     
     TString File;
     string name;  
-    for(int choice=0;choice<2;choice++)
+    for(int choice=0;choice<4;choice++)
     {
         if(choice==0)
         {
@@ -36,6 +36,16 @@ void MCAnalysis()
         {
             File="Data/mc_jpsi_mumu.root";
             name="MCMuonFull";
+        }
+        else if(choice==2)
+        {
+            File="Data/yyee_starlight_sig_sampling.root";
+            name="MCElectronBackground";
+        }
+        else if(choice==3)
+        {
+            File="Data/yymumu_starlight_sig_sampling.root";
+            name="MCMuonBackground";
         }
 
         //========================
@@ -126,7 +136,7 @@ void MCAnalysis()
         TH1D *HRadEtaPhi = new TH1D("RadEtaPhi","RadEtaPhi",100,0,8);
         TH1D *EtaRangeHist = new TH1D("EtaRangeHist","EtaRangeHist",3,0.5,3.5);
 
-        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2.5,3.5);
+        TH1D *DiMass = new TH1D("dimass","Lepton pair mass",50,2,3.5);
 
 
         TH1D *Pt = new TH1D("Pt","Transverse momentum of lepton pair",50,0,0.2);
@@ -211,11 +221,19 @@ void MCAnalysis()
                     Pt->Fill(dipartic.Perp());
                     Rapidity->Fill(dipartic.Rapidity());
                     DiMass->Fill(dipartic.M());
+                    //========================
+                    //Cut on Bethe-Heitler
+                    //========================
+                    TVector3 b = dipartic.BoostVector();
+                    TLorentzVector t_prim0, t_prim1;
+                    t_prim0=t[0];// t_prim0.Boost(b);
+                    t_prim1=t[1];// t_prim1.Boost(b);
+                    PhiDiffHist->Fill(acos(cos(t_prim0.Phi()-t_prim1.Phi()))*DEG);
 
                     //========================
                     //Saving electron data  
                     //========================
-                    if(!choice)
+                    if(choice==0 || choice==2)
                     {
                         for(int i=0;i<2;i++)
                         {
@@ -253,7 +271,7 @@ void MCAnalysis()
                     //========================
                     //Saving muon data  
                     //========================
-                    if(choice)
+                    if(choice==1 || choice==3)
                     {
                         for(int i=0;i<2;i++)
                         {

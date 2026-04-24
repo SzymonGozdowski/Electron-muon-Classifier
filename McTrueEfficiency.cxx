@@ -23,14 +23,16 @@ void McTrueEfficiency()
     Double_t pi = TMath::Pi();
     double DEG  = 180 / TMath::Pi();
 
-    vector<TString> files(3);
+    const int NumberOfFiles=5;
+    vector<TString> files(NumberOfFiles);
     files[0] = "Data/mc_jpsi_ee.root";
     files[1] = "Data/mc_jpsi_mumu.root";
     files[2] = "Data/data23_2trk_moreTCvars.root";
+    files[3] = "Data/yyee_starlight_sig_sampling.root";
+    files[4] = "Data/yymumu_starlight_sig_sampling.root";
 
 
-    TString fileLabels[3] = { "MC ee", "MC #mu#mu","Data"};
-    int     fileColors[3] = { kRed, kBlue, kBlack};
+    TString fileLabels[NumberOfFiles] = { "MC ee", "MC #mu#mu","Data", "MC ee Background", "MC #mu#mu Background"};
 
     float PixelHits, PixelTRTHits, PixeldEdX, PixelSCTHits;
     float FVariable, EMprop, Lambda, Lambda2, Radius, EtaRange;
@@ -53,15 +55,15 @@ void McTrueEfficiency()
     //========================
     // Histogramy - tablice [3] po plikach, [5][3] po zakresach eta x plik
     //========================
-    TH1D *DiMass[3], *DiMassEl[3], *DiMassMu[3];
-    TH1D *EtaFull[3],  *EnergyFull[3], *EtaCalo[3], *EnergyCalo[3];
-    TH1D *ElectronEta[3], *ElectronEnergy[3];
-    TH1D *MuonEta[3],     *MuonEnergy[3];
+    TH1D *DiMass[NumberOfFiles], *DiMassEl[NumberOfFiles], *DiMassMu[NumberOfFiles];
+    TH1D *EtaFull[NumberOfFiles],  *EnergyFull[NumberOfFiles], *EtaCalo[NumberOfFiles], *EnergyCalo[NumberOfFiles];
+    TH1D *ElectronEta[NumberOfFiles], *ElectronEnergy[NumberOfFiles];
+    TH1D *MuonEta[NumberOfFiles],     *MuonEnergy[NumberOfFiles];
 
     // [etaRange][file]  ->  5 zakresow: |eta|<0.5, 1.0, 1.5, 2.0, 2.5
-    TH1D *DiMassEta[5][3];
-    TH1D *DiMassElEta[5][3];
-    TH1D *DiMassMuEta[5][3];
+    TH1D *DiMassEta[5][NumberOfFiles];
+    TH1D *DiMassElEta[5][NumberOfFiles];
+    TH1D *DiMassMuEta[5][NumberOfFiles];
 
     // Histogramy pomocnicze (niezalezne od pliku)
     TH1D *H_Count   = new TH1D("H_Count",   "Count",   7,  -0.5, 6.5);
@@ -72,7 +74,7 @@ void McTrueEfficiency()
     TH1D *H_Lambda2 = new TH1D("H_Lambda2", "Lambda2", 40,  0,   600);
     TH1D *H_Radius  = new TH1D("H_Radius",  "Radius",  40,  0,   100);
 
-    for (int f = 0; f < 3; f++) {
+    for (int f = 0; f < NumberOfFiles; f++) {
         DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2.3, 3.5);
         DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2.3, 3.5);
         DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2.3, 3.5);
@@ -105,7 +107,7 @@ void McTrueEfficiency()
     //========================
     // Petla po plikach i eventach
     //========================
-    for (int File = 0; File < 3; File++) {
+    for (int File = 0; File < NumberOfFiles; File++) {
         TChain *mychain = new TChain("G2TauTree");
         mychain->Add(files[File]);
         TTreeReader tree_reader(mychain);
@@ -345,7 +347,7 @@ void McTrueEfficiency()
 
     
 
-    TF1 *MCmassElCb = new TF1("MCmassElCb", doubleCB, 2.5, 3.3, 7);
+    TF1 *MCmassElCb = new TF1("MCmassElCb", doubleCB, 2.4, 3.3, 7);
 
     MCmassElCb->SetParNames("Norm", "Mean", "Sigma", "Alpha_L", "N_L", "Alpha_R", "N_R");
     MCmassElCb->SetParameters(
@@ -508,27 +510,132 @@ void McTrueEfficiency()
     l1->SetLineColor(kRed); l1->SetLineStyle(2); l1->Draw();
     cPullEl->SaveAs("Plots/CrystalBallEl_Ratio.png");
 
+    TF1 *MCmassElBackExp = new TF1("MCmassElBackExp", "[0]*exp([1]*x)", 2.4, 3.5);
+    MCmassElBackExp->SetParameters(DiMass[1]->GetMaximum(),-0.2);
+
+
+
+    DiMass[3]->Fit("MCmassElBackExp", "RLQ");  // "R" = użyj zakresu z TF1
+
+    double Elmean_val  = MCmassElBackExp->GetParameter(1);
+    double Elmean_err  = MCmassElBackExp->GetParError(1);
+    double Elchi2_ndf  = MCmassElBackExp->GetChisquare() / MCmassElBackExp->GetNDF();
     
 
 
-    TF1 *MCmassMuCbExp = new TF1("MCmassMuCbExp", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.5, 3.5, 9);
+        // --- KANWA I PADY DLA MIONÓW ---
+    TCanvas *cPullElBa = new TCanvas("cPullElBa", "Fit ElEl", 800, 800);
+    TPad *pad114 = new TPad("pad11", "pad11", 0, 0.3, 1, 1.0);
+    TPad *pad223 = new TPad("pad22", "pad22", 0, 0.0, 1, 0.3);
+    pad114->SetBottomMargin(0);
+    pad223->SetTopMargin(0);
+    pad223->SetBottomMargin(0.35);
+    pad114->Draw(); 
+    pad223->Draw();
+
+    pad114->cd();
+    DiMass[3]->SetLineColor(kBlack);
+    DiMass[3]->SetTitle("#gamma#gamma #rightarrow ee : MC and Fit");
+    DiMass[3]->GetYaxis()->SetTitle("Events");
+    DiMass[3]->Draw("E");
+    MCmassElBackExp->Draw("same");
+    legEFF->Draw("same");
+
+    pad223->cd(); // TERAZ pad22 JEST ZADEKLAROWANY WYŻEJ
+    TH1F *hRatioElBa = (TH1F*)DiMass[3]->Clone("hRatioElBa");
+    hRatioElBa->Reset();
+    for (int i = 1; i <= DiMass[3]->GetNbinsX(); i++) {
+        double data_val = DiMass[3]->GetBinContent(i);
+        double data_err = DiMass[3]->GetBinError(i);
+        double model_val = MCmassElBackExp->Eval(DiMass[3]->GetBinCenter(i));
+        if (model_val > 0) {
+            hRatioElBa->SetBinContent(i, data_val / model_val);
+            hRatioElBa->SetBinError(i, data_err / model_val);
+        }
+    }
+    StyleRatio(hRatioElBa, "Data / Fit");
+
+    hRatioElBa->Draw("E0");
+
+    TLine *l1m3 = new TLine(2.8, 1.0, 3.4, 1.0);
+    l1m3->SetLineColor(kRed); l1m3->SetLineStyle(2); l1m3->Draw();
+
+    cPullElBa->SaveAs("Plots/ExpEl.png");
+
+
+    TF1 *MCmassMuBackExp = new TF1("MCmassMuBackExp", "[0]*exp([1]*x)", 2.4, 3.5);
+    MCmassMuBackExp->SetParameters(DiMass[1]->GetMaximum(),-0.2);
+
+
+
+    DiMass[4]->Fit("MCmassMuBackExp", "RLQ");  // "R" = użyj zakresu z TF1
+
+    double Mumean_val  = MCmassMuBackExp->GetParameter(1);
+    double Mumean_err  = MCmassMuBackExp->GetParError(1);
+    double Muchi2_ndf  = MCmassMuBackExp->GetChisquare() / MCmassMuBackExp->GetNDF();
+    
+
+
+        // --- KANWA I PADY DLA MIONÓW ---
+    TCanvas *cPullMuBa = new TCanvas("cPullMuBa", "Fit mumu", 800, 800);
+    TPad *pad111 = new TPad("pad11", "pad11", 0, 0.3, 1, 1.0);
+    TPad *pad222 = new TPad("pad22", "pad22", 0, 0.0, 1, 0.3);
+    pad111->SetBottomMargin(0);
+    pad222->SetTopMargin(0);
+    pad222->SetBottomMargin(0.35);
+    pad111->Draw(); 
+    pad222->Draw();
+
+    pad111->cd();
+    DiMass[4]->SetLineColor(kBlack);
+    DiMass[4]->SetTitle("#gamma#gamma #rightarrow #mu#mu : MC and Fit");
+    DiMass[4]->GetYaxis()->SetTitle("Events");
+    DiMass[4]->Draw("E");
+    MCmassMuBackExp->Draw("same");
+    legEFF->Draw("same");
+
+    pad222->cd(); // TERAZ pad22 JEST ZADEKLAROWANY WYŻEJ
+    TH1F *hRatioMuBa = (TH1F*)DiMass[4]->Clone("hRatioMuBa");
+    hRatioMuBa->Reset();
+    for (int i = 1; i <= DiMass[4]->GetNbinsX(); i++) {
+        double data_val = DiMass[4]->GetBinContent(i);
+        double data_err = DiMass[4]->GetBinError(i);
+        double model_val = MCmassMuBackExp->Eval(DiMass[4]->GetBinCenter(i));
+        if (model_val > 0) {
+            hRatioMuBa->SetBinContent(i, data_val / model_val);
+            hRatioMuBa->SetBinError(i, data_err / model_val);
+        }
+    }
+    StyleRatio(hRatioMuBa, "Data / Fit");
+
+    hRatioMuBa->Draw("E0");
+
+    TLine *l1m4 = new TLine(2.8, 1.0, 3.4, 1.0);
+    l1m4->SetLineColor(kRed); l1m4->SetLineStyle(2); l1m4->Draw();
+
+    cPullMuBa->SaveAs("Plots/ExpMu.png");
+
+    
+
+
+    TF1 *MCmassMuCbExp = new TF1("MCmassMuCbExp", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.4, 3.5, 9);
     for (int i = 1; i < 7; i++) {
         MCmassMuCbExp->FixParameter(i, MCmassMuCb->GetParameter(i));
     }
-
+    MCmassMuCbExp->FixParameter(8, MCmassMuBackExp->GetParameter(8));
     // Parametry tła
     MCmassMuCbExp->SetParameter(0, 100);  
     MCmassMuCbExp->SetParameter(7,  DiMassMu[2]->GetMaximum() * 0.35);  
     MCmassMuCbExp->SetParameter(8, -0.01);                                
     MCmassMuCbExp->SetParLimits(7, 0, 1e9);   
-    MCmassMuCbExp->SetParLimits(8, -10, 0); 
+    //MCmassMuCbExp->SetParLimits(8, -10, 0); 
     DiMassMu[2]->Fit("MCmassMuCbExp", "RLQ"); 
 
     double muTruechi2_ndf  = MCmassMuCbExp->GetChisquare() / MCmassMuCbExp->GetNDF();
 
-    TF1 *MCmassMuBackExp = new TF1("MCmassMuBackExp", "[0]*exp([1]*x)", 2.5, 3.5);
-    MCmassMuBackExp->SetParameter(0, MCmassMuCbExp->GetParameter(7));  
-    MCmassMuBackExp->SetParameter(1,  MCmassMuCbExp->GetParameter(8));
+    TF1 *MCmassMuExp = new TF1("MCmassMuExp", "[0]*exp([1]*x)", 2.5, 3.5);
+    MCmassMuExp->SetParameter(0, MCmassMuCbExp->GetParameter(7));  
+    MCmassMuExp->SetParameter(1,  MCmassMuCbExp->GetParameter(8));
 
     TLegend *legEFFData = new TLegend(0.65, 0.7, 0.8, 0.85);
     legEFFData->SetBorderSize(0);
@@ -536,7 +643,7 @@ void McTrueEfficiency()
     legEFFData->SetTextSize(0.04);
     legEFFData->AddEntry(DiMassMu[2],"Data","L");
     legEFFData->AddEntry(MCmassMuCbExp,"Fit","L");
-    legEFFData->AddEntry(MCmassMuBackExp,"Background","L");
+    legEFFData->AddEntry(MCmassMuExp,"Background","L");
     legEFFData->Draw();
 
     // Kanwa i Ratio dla elektronów
@@ -551,8 +658,8 @@ void McTrueEfficiency()
     DiMassMu[2]->SetLineColor(kBlack);
     DiMassMu[2]->Draw("E");
     MCmassMuCbExp->Draw("same");
-    MCmassMuBackExp->SetLineColor(kGreen);
-    MCmassMuBackExp->Draw("same");
+    MCmassMuExp->SetLineColor(kGreen);
+    MCmassMuExp->Draw("same");
     legEFFData->Draw("same");
 
 
@@ -573,24 +680,24 @@ void McTrueEfficiency()
 
     cDataMu->SaveAs("Plots/DataMu_Fit.png");
 
-    TF1 *MCmassElCbExp = new TF1("MCmassElCbExp", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.5, 3.5, 9);
+    TF1 *MCmassElCbExp = new TF1("MCmassElCbExp", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.4, 3.5, 9);
     for (int i = 1; i < 7; i++) {
         MCmassElCbExp->FixParameter(i, MCmassElCb->GetParameter(i));
     }
-
+    MCmassElCbExp->FixParameter(8, MCmassElBackExp->GetParameter(8));
     // Parametry tła
     MCmassElCbExp->SetParameter(0, 100);  
     MCmassElCbExp->SetParameter(7,  DiMassEl[2]->GetMaximum() * 0.05);  
     MCmassElCbExp->SetParameter(8, -1.0);                                
     MCmassElCbExp->SetParLimits(7, 0, 1e9);   
-    MCmassElCbExp->SetParLimits(8, -10, 0); 
+    //MCmassElCbExp->SetParLimits(8, -10, 0); 
     DiMassEl[2]->Fit("MCmassElCbExp", "RLQ"); 
 
     double elTruechi2_ndf  = MCmassElCbExp->GetChisquare() / MCmassElCbExp->GetNDF();
 
-    TF1 *MCmassElBackExp = new TF1("MCmassElBackExp",  "[0]*exp([1]*x)", 2.5, 3.5);
-    MCmassElBackExp->SetParameter(0, MCmassElCbExp->GetParameter(7));  
-    MCmassElBackExp->SetParameter(1,  MCmassElCbExp->GetParameter(8)); 
+    TF1 *MCmassElExp = new TF1("MCmassElExp",  "[0]*exp([1]*x)", 2.4, 3.5);
+    MCmassElExp->SetParameter(0, MCmassElCbExp->GetParameter(7));  
+    MCmassElExp->SetParameter(1,  MCmassElCbExp->GetParameter(8)); 
 
     
 
@@ -606,8 +713,8 @@ void McTrueEfficiency()
     DiMassEl[2]->SetLineColor(kBlack);
     DiMassEl[2]->Draw("E");
     MCmassElCbExp->Draw("same");
-    MCmassElBackExp->SetLineColor(kGreen);
-    MCmassElBackExp->Draw("same");
+    MCmassElExp->SetLineColor(kGreen);
+    MCmassElExp->Draw("same");
     legEFFData->Draw("same");
 
 
@@ -696,7 +803,7 @@ void McTrueEfficiency()
 
 
 
-        TF1 *MCmassMuCbExpEta = new TF1("MCmassMuCbExpEta", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.5, 3.5, 9);
+        TF1 *MCmassMuCbExpEta = new TF1("MCmassMuCbExpEta", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.4, 3.5, 9);
         for (int i = 1; i < 7; i++) {
             MCmassMuCbExpEta->FixParameter(i, MCmassMuCbEta->GetParameter(i));
         }
@@ -711,7 +818,7 @@ void McTrueEfficiency()
 
         double muTruechi2_ndf  = MCmassMuCbExpEta->GetChisquare() / MCmassMuCbExpEta->GetNDF();
 
-        TF1 *MCmassMuBackExpEta = new TF1("MCmassMuBackExpEta", "[0]*exp([1]*x)", 2.5, 3.5);
+        TF1 *MCmassMuBackExpEta = new TF1("MCmassMuBackExpEta", "[0]*exp([1]*x)", 2.4, 3.5);
         MCmassMuBackExpEta->SetParameter(0, MCmassMuCbExpEta->GetParameter(7));  
         MCmassMuBackExpEta->SetParameter(1,  MCmassMuCbExpEta->GetParameter(8));
 

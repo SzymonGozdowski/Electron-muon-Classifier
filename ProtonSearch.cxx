@@ -13,12 +13,31 @@
 #include <vector>
 #include "OldTopocluster.C"
 
+auto doubleCB = [](Double_t *x, Double_t *par) -> Double_t {
+
+        double t = (x[0] - par[1]) / par[2];
+        double absAL = fabs(par[3]);
+        double absAR = fabs(par[5]);
+
+        if (t < -absAL) {
+            double a = pow(par[4] / absAL, par[4]) * exp(-0.5 * absAL * absAL);
+            double b = par[4] / absAL - absAL;
+            return par[0] * a / pow(b - t, par[4]);
+        } else if (t > absAR) {
+            double a = pow(par[6] / absAR, par[6]) * exp(-0.5 * absAR * absAR);
+            double b = par[6] / absAR - absAR;
+            return par[0] * a / pow(b + t, par[6]);
+        } else {
+            return par[0] * exp(-0.5 * t * t);
+        }
+    };
+
 void ProtonSearch()
 {
     gROOT->SetBatch(kTRUE);
     gROOT->ProcessLine("gErrorIgnoreLevel = 3000;");
 
-    const Float_t ProtonMass    = 0.97056583755; //WRONG!!!
+    const Float_t ProtonMass    = 0.93827208816; 
     const Float_t MuonMass    = 0.1056583755;
     const Float_t ElectronMass = 0.00051099895;
     Double_t pi = TMath::Pi();
@@ -74,7 +93,7 @@ void ProtonSearch()
     TH1D *H_Radius  = new TH1D("H_Radius",  "Radius",  40,  0,   100);
 
     for (int f = 0; f < 1; f++) {
-        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 0, 3.5);
+        DiMass[f]        = new TH1D(Form("DiMass_%d",f),       Form("Lepton pair mass - %s",       fileLabels[f].Data()), 50, 2.5, 3.5);
         DiMassEl[f]      = new TH1D(Form("DiMassEl_%d",f),     Form("Electron pair mass - %s",     fileLabels[f].Data()), 50, 2.5, 3.5);
         DiMassMu[f]      = new TH1D(Form("DiMassMu_%d",f),     Form("Muon pair mass - %s",         fileLabels[f].Data()), 50, 2.5, 3.5);
         EtaFull[f]       = new TH1D(Form("EtaFull_%d",f),      Form("Eta Full - %s",               fileLabels[f].Data()), 30, -3,  3);
@@ -158,7 +177,7 @@ void ProtonSearch()
             if (count == 2 && TrackCharge[0] != TrackCharge[1]) {
                 TLorentzVector dipartic_prim = t_prim[0] + t_prim[1];
 
-                if (dipartic_prim .Perp() < 0.2 && dipartic_prim .M() < 2.5 && dipartic_prim .M() > 2.3) {
+                if (dipartic_prim .Perp() < 0.2 && dipartic_prim .M() < 2.9 && dipartic_prim .M() > 2) {
                     t[0].SetPtEtaPhiM(t_prim[0].Perp(), t_prim[0].Eta(), t_prim[0].Phi(), ProtonMass);
                     t[1].SetPtEtaPhiM(t_prim[1].Perp(), t_prim[1].Eta(), t_prim[1].Phi(), ProtonMass);
                     TLorentzVector dipartic = t[0] + t[1];
@@ -211,16 +230,16 @@ void ProtonSearch()
                     }
                      else if (Found == 1) {
                         if (response[0] == probcut) {
-                            if      (response[1] < probcut - 0.15) lepton = 0;
-                            else if (response[1] > probcut + 0.15) lepton = 1;
+                            if      (response[1] < probcut ) lepton = 0;
+                            else if (response[1] > probcut ) lepton = 1;
                             EtaCalo[File]->Fill(t[1].Eta());
                             EnergyCalo[File]->Fill(t[1].E());
                             foundlepton=1;
 
                         } 
                         else if (response[1] == probcut) {
-                            if      (response[0] < probcut - 0.15) lepton = 0;
-                            else if (response[0] > probcut + 0.15) lepton = 1;
+                            if      (response[0] < probcut ) lepton = 0;
+                            else if (response[0] > probcut ) lepton = 1;
                             EtaCalo[File]->Fill(t[0].Eta());
                             EnergyCalo[File]->Fill(t[0].E());
                             foundlepton=0;
@@ -230,8 +249,8 @@ void ProtonSearch()
                         oneparticle += 2;
                     } else if (Found == 2) {
                         twoparticle += 2;
-                        if      ((response[0] + response[1]) / 2 < probcut - 0.15) lepton = 0;
-                        else if ((response[0] + response[1]) / 2 > probcut + 0.15) lepton = 1;
+                        if      ((response[0] + response[1]) / 2 < probcut ) lepton = 0;
+                        else if ((response[0] + response[1]) / 2 > probcut ) lepton = 1;
                         else { diffrentparticle += 2; Found = 0; }
                         EtaCalo[File]->Fill(t[0].Eta());
                         EtaCalo[File]->Fill(t[1].Eta());
@@ -338,15 +357,74 @@ void ProtonSearch()
         DiMassEl[f]->SetLineColor(kRed);
         DiMassMu[f]->SetLineColor(kBlue);
 
+        
+
         DiMass[f]->SetMinimum(0);
-        DiMass[f]->GetXaxis()->SetTitle("M_{ll} [GeV]");
+        DiMass[f]->GetXaxis()->SetTitle("M_{pp} [GeV]");
+        DiMassEl[f]->GetXaxis()->SetTitle("M_{pp} [GeV]");
+        DiMassMu[f]->GetXaxis()->SetTitle("M_{pp} [GeV]");
+
+        DiMass[f]->SetTitle("Proton - J/psi");
         DiMassEl[f]->SetTitle("Proton - J/psi");
-        //DiMass[f]->Draw();
-        //DiMassMu[f]->Draw("same");
-        DiMassEl[f]->Draw();
+        DiMass[f]->SetTitle("Proton - J/psi");
 
-
+        c1.Clear();
+        DiMass[f]->Draw();
         c1.SaveAs("Plots/ProtonSearch.pdf"); 
+        c1.Clear();
+
+        DiMassMu[f]->Draw();
+        c1.SaveAs("Plots/ProtonSearch.pdf");
+        c1.Clear();
+
+        TF1 *MCmassPrCbExp = new TF1("MCmassPrCbExp", [&](double *x, double *p) -> double { return doubleCB(x, p) + p[7] * TMath::Exp(p[8] * x[0]);}, 2.95, 3.25, 9);
+        
+
+
+        // Parametry tła
+        MCmassPrCbExp->SetParameter(0, 1000);  
+        MCmassPrCbExp->SetParameter(1, 3.1);  
+        MCmassPrCbExp->SetParameter(2, 0.2);  
+        MCmassPrCbExp->SetParameter(3, 2);  
+        MCmassPrCbExp->SetParameter(4, 5);  
+        MCmassPrCbExp->SetParameter(5, 2);  
+        MCmassPrCbExp->SetParameter(6, 5);  
+        MCmassPrCbExp->SetParameter(7,  800);  
+        MCmassPrCbExp->SetParameter(8, -0.8);  
+        MCmassPrCbExp->SetParLimits(1, 3, 3.2);   
+        MCmassPrCbExp->SetParLimits(2, 0, 0.07);                               
+        MCmassPrCbExp->SetParLimits(7, 0, 1e9);   
+        MCmassPrCbExp->SetParLimits(8, -1, 0); 
+        DiMassEl[f]->Fit("MCmassPrCbExp", "RL"); 
+
+        double PrTruechi2_ndf  = MCmassPrCbExp->GetChisquare() / MCmassPrCbExp->GetNDF();
+
+        TF1 *MCmassPrBackExp = new TF1("MCmassPrBackExp", "[0]*exp([1]*x)", 2.95, 3.25);
+        MCmassPrBackExp->SetParameter(0, MCmassPrCbExp->GetParameter(7));  
+        MCmassPrBackExp->SetParameter(1,  MCmassPrCbExp->GetParameter(8));
+
+        TLegend *legEFFData = new TLegend(0.65, 0.7, 0.8, 0.85);
+        legEFFData->SetBorderSize(0);
+        legEFFData->SetTextFont(42);
+        legEFFData->SetTextSize(0.04);
+        legEFFData->AddEntry(DiMassEl[f],"Data","L");
+        legEFFData->AddEntry(MCmassPrCbExp,"Fit","L");
+        legEFFData->AddEntry(MCmassPrBackExp,"Background","L");
+        legEFFData->Draw();
+
+        
+
+        DiMassEl[f]->SetTitle("J/#psi #rightarrow #P#P : Data vs MC Fit + Exp;Mass [GeV];Events");
+        DiMassEl[f]->SetLineColor(kBlack);
+        DiMassEl[f]->Draw("E");
+        MCmassPrCbExp->Draw("same");
+        MCmassPrBackExp->SetLineColor(kGreen);
+        MCmassPrBackExp->Draw("same");
+        legEFFData->Draw("same");
+
+        DiMassEl[f]->Draw();
+        c1.SaveAs("Plots/ProtonSearch.pdf"); 
+
     }
     c1.SaveAs("Plots/ProtonSearch.pdf]");
 
