@@ -60,15 +60,16 @@ endif
 	$(BIN_DIR)/$(PROGRAM) $(INPUT) $(OUTPUT) $(OUTPUT_ML)
 
 #INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/jpsi_psi2s_extra_variables.root"
-INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/data23_2trk_moreTCvars.root"
-OUTPUT := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists_data23.root"
-OUTPUT_ML := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_ml_data23.root"
+#INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/data23_2trk_moreTCvars.root"
+INPUT  := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data/jpsi_cell_sig_sampling.root"
+OUTPUT := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/control_histograms/out_hists_data_with_sig_sampling.root"
+OUTPUT_ML := "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/data_for_ml/ml_data_with_sig_sampling.root"
 run:
 	$(BIN_DIR)/$(PROGRAM) $(INPUT) $(OUTPUT) $(OUTPUT_ML)
 
 
-PLOT_INPUT  := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/out/out_hists_data23.root
-PLOT_OUTPUT := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/out_hists_data23.pdf
+PLOT_INPUT  := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/control_histograms/out_hists_data_with_sig_sampling.root
+PLOT_OUTPUT := /Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/out_hists_data_with_sig_sampling.pdf
 plot:
 	root -l -b -q "src/plot.C(\"$(PLOT_INPUT)\", \"$(PLOT_OUTPUT)\")"
 
@@ -80,4 +81,11 @@ plot_specified:
 	root -l -b -q "src/plot.C(\"$(PLOT_INPUT)\", \"$(dir $(PLOT_OUTPUT))$(basename $(notdir $(PLOT_OUTPUT)))_$(output).pdf\")"
 
 
-.PHONY: all clean cleanall dirs run_specified run plot plot_specified
+run_MC:
+	root -l -b -q '../analysis_MC/MC_analysis.C+'
+
+clean_MC:
+	rm -f ../analysis_MC/*.so ../analysis_MC/*_ACLiC_* ../analysis_MC/*.pcm
+
+
+.PHONY: all clean cleanall dirs run_specified run plot plot_specified run_MC clean_MC

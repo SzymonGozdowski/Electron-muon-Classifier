@@ -130,6 +130,8 @@ public :
    Bool_t          passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1VZDC_A_VZDC_C_VTE200;
    Bool_t          passed_HLT_mu3_hi_FgapAC5_L1MU3V_VTE50;
    Bool_t          passed_HLT_mu3_hi_FgapAC5_L1MU3V_VjTE50;
+   Bool_t          passed_HLT_mu3_L1MU3V_VTE50;
+   Bool_t          passed_HLT_mu3_L1MU3V_VjTE50;
    Bool_t          passed_HLT_noalg_L1TRT_VTE20_L1_isPassedBeforePrescale;
    Bool_t          passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1TRT_VTE20_L1_isPassedBeforePrescale;
    Bool_t          passed_L11ZDC_A_1ZDC_C_VTE200_AV;
@@ -371,6 +373,8 @@ public :
    vector<bool>    *topo_cluster_fail_syst_eff_sampling;
    vector<float>   *topo_cluster_time;
    vector<float>   *topo_cluster_ENG_FRAC_EM;
+   vector<float>   *topo_cluster_LATERAL;
+   vector<float>   *topo_cluster_LONGITUDINAL;
    vector<float>   *eg_cluster_eta;
    vector<float>   *eg_cluster_phi;
    vector<float>   *eg_cluster_et;
@@ -617,6 +621,8 @@ public :
    TBranch        *b_passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1VZDC_A_VZDC_C_VTE200;   //!
    TBranch        *b_passed_HLT_mu3_hi_FgapAC5_L1MU3V_VTE50;   //!
    TBranch        *b_passed_HLT_mu3_hi_FgapAC5_L1MU3V_VjTE50;   //!
+   TBranch        *b_passed_HLT_mu3_L1MU3V_VTE50;   //!
+   TBranch        *b_passed_HLT_mu3_L1MU3V_VjTE50;   //!
    TBranch        *b_passed_HLT_noalg_L1TRT_VTE20_L1_isPassedBeforePrescale;   //!
    TBranch        *b_passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1TRT_VTE20_L1_isPassedBeforePrescale;   //!
    TBranch        *b_passed_L11ZDC_A_1ZDC_C_VTE200_AV;   //!
@@ -858,6 +864,8 @@ public :
    TBranch        *b_topo_cluster_fail_syst_eff_sampling;   //!
    TBranch        *b_topo_cluster_time;   //!
    TBranch        *b_topo_cluster_ENG_FRAC_EM;   //!
+   TBranch        *b_topo_cluster_LATERAL;   //!
+   TBranch        *b_topo_cluster_LONGITUDINAL;   //!
    TBranch        *b_eg_cluster_eta;   //!
    TBranch        *b_eg_cluster_phi;   //!
    TBranch        *b_eg_cluster_et;   //!
@@ -1172,7 +1180,7 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    // (once per file to be processed).
 
    // Set object pointer
-   truth_electron_eta = 0;
+    truth_electron_eta = 0;
    truth_electron_phi = 0;
    truth_electron_pt = 0;
    truth_electron_charge = 0;
@@ -1302,6 +1310,8 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    topo_cluster_fail_syst_eff_sampling = 0;
    topo_cluster_time = 0;
    topo_cluster_ENG_FRAC_EM = 0;
+   topo_cluster_LATERAL = 0;
+   topo_cluster_LONGITUDINAL = 0;
    eg_cluster_eta = 0;
    eg_cluster_phi = 0;
    eg_cluster_et = 0;
@@ -1402,7 +1412,7 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    fCurrent = -1;
    fChain->SetMakeClass(1);
 
-   fChain->SetBranchAddress("run_number", &run_number, &b_run_number);
+  fChain->SetBranchAddress("run_number", &run_number, &b_run_number);
    fChain->SetBranchAddress("lumi_block", &lumi_block, &b_lumi_block);
    fChain->SetBranchAddress("event_number", &event_number, &b_event_number);
    fChain->SetBranchAddress("mc_channel_number", &mc_channel_number, &b_mc_channel_number);
@@ -1478,6 +1488,8 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    fChain->SetBranchAddress("passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1VZDC_A_VZDC_C_VTE200", &passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1VZDC_A_VZDC_C_VTE200, &b_passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1VZDC_A_VZDC_C_VTE200);
    fChain->SetBranchAddress("passed_HLT_mu3_hi_FgapAC5_L1MU3V_VTE50", &passed_HLT_mu3_hi_FgapAC5_L1MU3V_VTE50, &b_passed_HLT_mu3_hi_FgapAC5_L1MU3V_VTE50);
    fChain->SetBranchAddress("passed_HLT_mu3_hi_FgapAC5_L1MU3V_VjTE50", &passed_HLT_mu3_hi_FgapAC5_L1MU3V_VjTE50, &b_passed_HLT_mu3_hi_FgapAC5_L1MU3V_VjTE50);
+   fChain->SetBranchAddress("passed_HLT_mu3_L1MU3V_VTE50", &passed_HLT_mu3_L1MU3V_VTE50, &b_passed_HLT_mu3_L1MU3V_VTE50);
+   fChain->SetBranchAddress("passed_HLT_mu3_L1MU3V_VjTE50", &passed_HLT_mu3_L1MU3V_VjTE50, &b_passed_HLT_mu3_L1MU3V_VjTE50);
    fChain->SetBranchAddress("passed_HLT_noalg_L1TRT_VTE20_L1_isPassedBeforePrescale", &passed_HLT_noalg_L1TRT_VTE20_L1_isPassedBeforePrescale, &b_passed_HLT_noalg_L1TRT_VTE20_L1_isPassedBeforePrescale);
    fChain->SetBranchAddress("passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1TRT_VTE20_L1_isPassedBeforePrescale", &passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1TRT_VTE20_L1_isPassedBeforePrescale, &b_passed_HLT_mb_excl_1trk5_pt1_hi_FgapAC5_L1TRT_VTE20_L1_isPassedBeforePrescale);
    fChain->SetBranchAddress("passed_L11ZDC_A_1ZDC_C_VTE200_AV", &passed_L11ZDC_A_1ZDC_C_VTE200_AV, &b_passed_L11ZDC_A_1ZDC_C_VTE200_AV);
@@ -1719,6 +1731,8 @@ void G2TauTree_data23_analysis::Init(TTree *tree)
    fChain->SetBranchAddress("topo_cluster_fail_syst_eff_sampling", &topo_cluster_fail_syst_eff_sampling, &b_topo_cluster_fail_syst_eff_sampling);
    fChain->SetBranchAddress("topo_cluster_time", &topo_cluster_time, &b_topo_cluster_time);
    fChain->SetBranchAddress("topo_cluster_ENG_FRAC_EM", &topo_cluster_ENG_FRAC_EM, &b_topo_cluster_ENG_FRAC_EM);
+   fChain->SetBranchAddress("topo_cluster_LATERAL", &topo_cluster_LATERAL, &b_topo_cluster_LATERAL);
+   fChain->SetBranchAddress("topo_cluster_LONGITUDINAL", &topo_cluster_LONGITUDINAL, &b_topo_cluster_LONGITUDINAL);
    fChain->SetBranchAddress("eg_cluster_eta", &eg_cluster_eta, &b_eg_cluster_eta);
    fChain->SetBranchAddress("eg_cluster_phi", &eg_cluster_phi, &b_eg_cluster_phi);
    fChain->SetBranchAddress("eg_cluster_et", &eg_cluster_et, &b_eg_cluster_et);

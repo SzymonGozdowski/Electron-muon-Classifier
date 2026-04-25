@@ -123,7 +123,7 @@ void G2TauTree_data23_analysis::Loop(){
    TH1D* hist_track_pt_cut = new TH1D ("hist_track_pt_cut", "Track Pt cut (>0.1 GeV)", 100, 0, 15000);
    TH1D* hist_track_eta_cut = new TH1D("hist_track_eta_cut", "Track Eta cut (<2.5)", 300, -3, 3);
    // Inicjalizacja histogramow dilepton
-   TH1D* hist_dilepton_pt = new TH1D("hist_dilepton_pt", "Dilepton Pt", 500, 0, 0.5);
+   TH1D* hist_dilepton_pt = new TH1D("hist_dilepton_pt", "Dilepton Pt", 300, 0, 0.3);
    TH1D* hist_dilepton_rapidity = new TH1D("hist_dilepton_rapidity","Dilepton Rapidity", 300, -3, 3);
    TH1D* hist_dilepton_inv_mass = new TH1D("hist_dilepton_inv_mass","Dilepton Invariant Mass ", 600, 2.8, 3.4);
    TH1D* hist_dilepton_DR = new TH1D("hist_dilepton_DR", "Dilepton DR", 500, 0, 0.5);
@@ -196,6 +196,9 @@ void G2TauTree_data23_analysis::Loop(){
    TH1D* hist_muon_topo_time = new TH1D("hist_muon_topo_time", "Muon TopoCluster Time", 70, -30, 40);
    TH1D* hist_muon_topo_radius = new TH1D("hist_muon_topo_radius", "Muon TopoCluster Radius", 100, 0, 2.1e5);
 
+   // Inicjalizaca hist Cell Significance Sampling Layer
+   TH1D* hist_topo_cell_sig_sampling = new TH1D("hist_topo_cell_sig_sampling", "TopoCluster Cell Significance Sampling Layer", 20, -0.5, 19.5);
+
    std::vector<TH1*> histograms;
    histograms.push_back(hist_track_theta);
    histograms.push_back(hist_track_phi);
@@ -267,12 +270,14 @@ void G2TauTree_data23_analysis::Loop(){
    histograms.push_back(hist_muon_topo_time);
    histograms.push_back(hist_muon_topo_radius);
 
+   histograms.push_back(hist_topo_cell_sig_sampling);
+
    //int electron_number = 0;
    //int muon_number = 0;
 
 
    truth_particle_tag = -1; // 0 - electron, 1 - muon
-   const double MUON_MASS = 0.1056583745;
+   const double MUON_MASS = 0.1056583745; // GeV/c^2
 
    mlDataTreeInit();
 
@@ -307,16 +312,16 @@ void G2TauTree_data23_analysis::Loop(){
       // filling track_eta
       for (int i = 0; i < track_eta->size(); i++){
          hist_track_eta->Fill(track_eta->at(i));
-         if(abs(track_eta->at(i)) < 2.5){
+         //if(abs(track_eta->at(i)) < 2.5){
             hist_track_eta_cut->Fill(track_eta->at(i));
-         }
+         //}
       }
       // filling track_pt
       for (int i = 0; i < track_pt->size(); i++){
          hist_track_pt->Fill(track_pt->at(i));
-         if(track_pt->at(i) > 0.1){
+         //if(track_pt->at(i) > 0.1){
             hist_track_pt_cut->Fill(track_pt->at(i));
-         }
+         //}
       }
       //filling track_PixeldEdX
       for (int i = 0; i < track_PixeldEdX->size(); i++){
@@ -357,6 +362,10 @@ void G2TauTree_data23_analysis::Loop(){
       for (int i = 0; i < topo_cluster_r2->size(); i++){
          hist_topo_radius->Fill(topo_cluster_r2->at(i));
       }
+      // filling topo_cluster_cell_sig_sampling
+      for (int i = 0; i < topo_cluster_cell_sig_sampling->size(); i++){
+         hist_topo_cell_sig_sampling->Fill(topo_cluster_cell_sig_sampling->at(i));
+      }
       
       // dileptons
       if(track_n == 2){
@@ -383,7 +392,8 @@ void G2TauTree_data23_analysis::Loop(){
             
 
              // filling dilepton M, Pt, Rapidity; cut Pt < 0.2Gev; cut dimass < 3.2 and dimass > 2.9
-            if (dileptonPt >= 0.2 || dimass > 3.2 || dimass < 2.9) continue; // continue - przeciwne war.!
+            //if(dimass > 3.2 || dimass < 2.9) continue;
+            if (dileptonPt >= 0.2) continue; // continue - przeciwne war.!
             hist_dilepton_inv_mass->Fill(dimass);
             hist_dilepton_rapidity->Fill(dileptonRapidity);
             hist_dilepton_pt->Fill(dileptonPt);
@@ -392,8 +402,7 @@ void G2TauTree_data23_analysis::Loop(){
             bool classifiedAsElectron = false;
             for(int i = 0; i < eg_cluster_n; i++){
                auto Deta = p_lepton[0].Eta() - eg_cluster_eta->at(i);
-               auto Dphi = p_lepton[0].Phi() - eg_cluster_phi->at(i);
-               // auto Dphi TVector2::Phi_mpi_pi(p_lepton[0].Phi() - eg_cluster_phi->at(i));
+               auto Dphi = TVector2::Phi_mpi_pi(p_lepton[0].Phi() - eg_cluster_phi->at(i));
                auto DR = sqrt(Deta*Deta + Dphi*Dphi);
                hist_dilepton_DR->Fill(DR);
                // Cut na delta R < 0.5
@@ -401,11 +410,25 @@ void G2TauTree_data23_analysis::Loop(){
                classifiedAsElectron = true;
             }
 
+            //Sprawdzanie Cell Significance Sampling Layer; war. > 7
+            bool HasHighCellSignificance = false;
+
+            for(int i = 0; i < topoclus_n; i++){
+               auto Deta = p_lepton[1].Eta() - topo_cluster_eta->at(i);
+               auto Dphi = TVector2::Phi_mpi_pi(p_lepton[1].Phi() - topo_cluster_phi->at(i));
+               auto DR = sqrt(Deta*Deta + Dphi*Dphi);
+               if(DR >= 0.5) continue;
+               if(topo_cluster_cell_sig_sampling->at(i) <= 7) continue;
+               HasHighCellSignificance = true;
+            }
+
             if(classifiedAsElectron){
                p_electrons.push_back(p_lepton[1]); // 1-sza cząstka p_lepton[0] pominięta, druga uznana za e-
             } else {
-               p_muons.push_back(p_lepton[0]);
-               p_muons.push_back(p_lepton[1]); // obie cząstki uznawane za miony
+               if(HasHighCellSignificance){
+                  //p_muons.push_back(p_lepton[0]); // obie cząstki uznawane za miony
+                  p_muons.push_back(p_lepton[1]); // 1-sza cząstka p_lepton[0] pominięta, druga uznana za mion (po war. Cell Significance Sampling Layer)
+               }
             }
 
             // filling hist dilepton
@@ -440,19 +463,19 @@ void G2TauTree_data23_analysis::Loop(){
             if(!p_muons.empty()){
                //muon_number = p_muons.size();
                hist_muon_number->Fill(p_muons.size()); // p_muons zawiera albo 0 albo 2 elementy
-               for(int i = 0; i < p_muons.size(); i++){
-                  hist_muon_E->Fill(p_muons[i].E());
-                  hist_muon_Pt->Fill(p_muons[i].Pt());
-                  hist_muon_Eta->Fill(p_muons[i].Eta());
-                  hist_muon_Phi->Fill(p_muons[i].Phi());
+               //for(int i = 0; i < p_muons.size(); i++){
+                  hist_muon_E->Fill(p_muons[0].E());
+                  hist_muon_Pt->Fill(p_muons[0].Pt());
+                  hist_muon_Eta->Fill(p_muons[0].Eta());
+                  hist_muon_Phi->Fill(p_muons[0].Phi());
 
-                  hist_muon_PixeldEdX->Fill(track_PixeldEdX->at(i));
-                  hist_muon_PixelHits->Fill(track_PixelHits->at(i));
-                  hist_muon_SCTHits->Fill(track_SCTHits->at(i));
-                  hist_muon_TRTHits->Fill(track_TRTHits->at(i));
+                  hist_muon_PixeldEdX->Fill(track_PixeldEdX->at(0));
+                  hist_muon_PixelHits->Fill(track_PixelHits->at(0));
+                  hist_muon_SCTHits->Fill(track_SCTHits->at(0));
+                  hist_muon_TRTHits->Fill(track_TRTHits->at(0));
 
                   //std::cout <<"[DEBUG] calling TopoCluster for muon." <<std::endl;
-                  TopoCluster(p_muons[i], hist_muon_number, hist_muon_topo_pt, hist_muon_topo_eta, hist_muon_topo_phi, hist_muon_FVariable, hist_muon_EMCal, hist_muon_topo_lambda,
+                  TopoCluster(p_muons[0], hist_muon_number, hist_muon_topo_pt, hist_muon_topo_eta, hist_muon_topo_phi, hist_muon_FVariable, hist_muon_EMCal, hist_muon_topo_lambda,
                   hist_muon_topo_lambda2, hist_muon_topo_time, hist_muon_topo_radius, FVariable, EMprop, lambda, lambda2, time, radius);
 
                   truth_particle_tag = 1; // 0 - electron, 1 - muon
@@ -460,7 +483,7 @@ void G2TauTree_data23_analysis::Loop(){
                     
                   mlDataTree->Fill(); // Zapis danych do drzewa ML
 
-               }
+               //}
             }
             
          }
