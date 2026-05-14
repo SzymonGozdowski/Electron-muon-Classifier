@@ -49,35 +49,96 @@ void Sig_bckg_stack()
     h_mc_pt->Add(h_mumu_pt);
 
     // =========================
+    // FRACTION FITTER
+    // =========================
+    TObjArray* mc_templates_mass = new TObjArray();
+    mc_templates_mass->Add(h_ee_mass);
+    mc_templates_mass->Add(h_mumu_mass);
+
+    TObjArray* mc_templates_pt = new TObjArray();
+    mc_templates_pt->Add(h_ee_pt);
+    mc_templates_pt->Add(h_mumu_pt);
+
+    TFractionFitter* fit_mass = new TFractionFitter(h_data_mass, mc_templates_mass);
+    Int_t status_fit_mass = fit_mass->Fit();
+
+    TFractionFitter* fit_pt = new TFractionFitter(h_data_pt, mc_templates_pt);
+    Int_t status_fit_pt = fit_pt->Fit();
+
+        // --- MASS fit results ---
+    if (status_fit_mass == 0) {
+        double chi2_m = fit_mass->GetChisquare();
+        int ndf_m     = fit_mass->GetNDF();
+        double prob_m = fit_mass->GetProb();
+        printf("\n[MASS Fit Results]\n");
+        printf("Chi2: %.2f, NDF: %d, Chi2/NDF: %.2f\n", chi2_m, ndf_m, chi2_m/ndf_m);
+        printf("P-value: %.4e\n", prob_m);
+    }
+
+    // --- PT fit results ---
+    if (status_fit_pt == 0) {
+        double chi2_p = fit_pt->GetChisquare();
+        int ndf_p     = fit_pt->GetNDF();
+        double prob_p = fit_pt->GetProb();
+        printf("\n[PT Fit Results]\n");
+        printf("Chi2: %.2f, NDF: %d, Chi2/NDF: %.2f\n", chi2_p, ndf_p, chi2_p/ndf_p);
+        printf("P-value: %.4e\n", prob_p);
+    }
+
+
+
+    // =========================
     // SCALING
     // =========================
-    double scale_mass = h_data_mass->Integral() / h_mc_mass->Integral();
-    double scale_pt = h_data_pt->Integral() / h_mc_pt->Integral();
 
-    // --- MASS copies ---
+    //global manual scaling
+    //double scale_mass = h_data_mass->Integral() / h_mc_mass->Integral();
+    //double scale_pt = h_data_pt->Integral() / h_mc_pt->Integral();
+
+    //fitter scaling
+    double f_ee_m, e_ee_m, f_mumu_m, e_mumu_m;
+    fit_mass->GetResult(0, f_ee_m, e_ee_m);
+    fit_mass->GetResult(1, f_mumu_m, e_mumu_m);
+
+    double f_ee_p, e_ee_p, f_mumu_p, e_mumu_p;
+    fit_pt->GetResult(0, f_ee_p, e_ee_p);
+    fit_pt->GetResult(1, f_mumu_p, e_mumu_p);
+
+    double n_data_m = h_data_mass->Integral();
+    double n_data_p = h_data_pt->Integral();
+
+    double scale_mass_ee   = (f_ee_m * n_data_m) / h_ee_mass->Integral();
+    double scale_mass_mumu = (f_mumu_m * n_data_m) / h_mumu_mass->Integral();
+    
+    double scale_pt_ee     = (f_ee_p * n_data_p) / h_ee_pt->Integral();
+    double scale_pt_mumu   = (f_mumu_p * n_data_p) / h_mumu_pt->Integral();
+
     TH1D* h_ee_mass_scaled   = (TH1D*)h_ee_mass->Clone("h_ee_mass_scaled");
     TH1D* h_mumu_mass_scaled = (TH1D*)h_mumu_mass->Clone("h_mumu_mass_scaled");
-    TH1D* h_mc_mass_scaled   = (TH1D*)h_mc_mass->Clone("h_mc_mass_scaled");
+    
+    TH1D* h_ee_pt_scaled     = (TH1D*)h_ee_pt->Clone("h_ee_pt_scaled");
+    TH1D* h_mumu_pt_scaled   = (TH1D*)h_mumu_pt->Clone("h_mumu_pt_scaled");
 
-    // --- PT copies ---
-    TH1D* h_ee_pt_scaled   = (TH1D*)h_ee_pt->Clone("h_ee_pt_scaled");
-    TH1D* h_mumu_pt_scaled = (TH1D*)h_mumu_pt->Clone("h_mumu_pt_scaled");
-    TH1D* h_mc_pt_scaled   = (TH1D*)h_mc_pt->Clone("h_mc_pt_scaled");
+    h_ee_mass_scaled->Scale(scale_mass_ee);
+    h_mumu_mass_scaled->Scale(scale_mass_mumu);
 
-    h_mc_mass_scaled->Scale(scale_mass);
-    h_ee_mass_scaled->Scale(scale_mass);
-    h_mumu_mass_scaled->Scale(scale_mass);
+    h_ee_pt_scaled->Scale(scale_pt_ee);
+    h_mumu_pt_scaled->Scale(scale_pt_mumu);
 
-    h_mc_pt_scaled->Scale(scale_pt);
-    h_ee_pt_scaled->Scale(scale_pt);
-    h_mumu_pt_scaled->Scale(scale_pt);
+    TH1D* h_mc_mass_scaled = (TH1D*)h_ee_mass_scaled->Clone("h_mc_mass_scaled");
+    h_mc_mass_scaled->Add(h_mumu_mass_scaled);
+
+    TH1D* h_mc_pt_scaled = (TH1D*)h_ee_pt_scaled->Clone("h_mc_pt_scaled");
+    h_mc_pt_scaled->Add(h_mumu_pt_scaled);
+
 
 
     // =========================
     // PLOTTING
     // =========================
 
-    TString outPdf = "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/stack_plots.pdf";
+    //TString outPdf = "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/stack_plots.pdf";
+    TString outPdf = "/Volumes/Sandisk_Macbook_Pro_1tb/electron_muon_project/plots/stack_plots_fraction_fitter.pdf";
 
     TLine* line = nullptr; // reusable pointer
 
