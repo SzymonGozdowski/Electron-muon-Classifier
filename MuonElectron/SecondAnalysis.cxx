@@ -10,7 +10,7 @@
 #include <string>
 #include <TLegend.h>
 #include <vector>
-#include "OldTopocluster.C"
+#include "../Topoclusters/TopoclusterHist.C"
 
 
 void SecondAnalysis()
@@ -27,7 +27,7 @@ void SecondAnalysis()
     TString File;
     string name;
      
-    File="Data/data23_2trk_moreTCvars.root";
+    File="../Data/data23_2trk_moreTCvars.root";
     //File="Data/mc_jpsi_ee.root";
     //File="Data/mc_jpsi_mumu.root";
     name="TrueData";
@@ -48,7 +48,7 @@ void SecondAnalysis()
     float EtaRange;
     bool  IsMuon;
 
-    TFile *file = new TFile(Form("Data/MLFinalData%s.root",name.c_str()), "RECREATE");
+    TFile *file = new TFile(Form("../Data/MLFinalData%s.root",name.c_str()), "RECREATE");
     TTree *MLDataTree = new TTree("MLDataTree", "MLDataTree");
 
     MLDataTree->Branch("track_PixelHits", &PixelHits, "track_PixelHits/F");
@@ -71,7 +71,7 @@ void SecondAnalysis()
     Ort::SessionOptions session_options;
     session_options.SetIntraOpNumThreads(1);
 
-    Ort::Session session(env, "Data/RFMuonElectron.onnx", session_options);
+    Ort::Session session(env, "../ONNX/RFMuonElectron.onnx", session_options);
     Ort::AllocatorWithDefaultOptions allocator;
 
     auto input_name_alloc  = session.GetInputNameAllocated(0, allocator);
@@ -79,13 +79,8 @@ void SecondAnalysis()
 
     const char* input_name  = input_name_alloc.get();
     const char* output_names[] = {"label", "probabilities"};
-    /*
-    float mean[9];
-    float scale[9];
-    std::ifstream file_scaler("Data/scaler.txt");
-    for(int i = 0; i < 9; ++i) file_scaler >> mean[i];
-    for(int i = 0; i < 9; ++i) file_scaler >> scale[i];
-    */   
+
+    
     //========================
     // Set up input file chain
     //========================
@@ -226,6 +221,7 @@ void SecondAnalysis()
         //Finding tracks of particles || |Eta|<2.5, pt>1GeV 
         //========================
         if(int(TrackNum[0])!=2) continue;
+
         for(int track=0;track<int(TrackNum[0]);track++)
         {
             
@@ -241,7 +237,6 @@ void SecondAnalysis()
         //========================
         if(count==2 && TrackCharge[0]!=TrackCharge[1])
         {
-            
             TLorentzVector dipartic;
             dipartic=t[0]+t[1];
             if(dipartic.Perp()<0.2 && dipartic.M()<3.5)// && dipartic.M()>2.7)
@@ -472,8 +467,11 @@ void SecondAnalysis()
     
     c1.SaveAs(Form("Plots/2%s.pdf[", name.c_str()));
     c1.Clear();
+    gPad->SetLogy(1);
     Response->Draw();
     c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
+    gPad->SetLogy(0);
+
     c1.Clear();
     ResponseDiffrend->Draw();
     c1.SaveAs(Form("Plots/2%s.pdf", name.c_str()));
