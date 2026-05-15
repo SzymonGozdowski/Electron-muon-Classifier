@@ -24,14 +24,20 @@ void BackgroundProton()
     Double_t pi=TMath::Pi();
     double DEG=180/TMath::Pi();
 
-    vector<TString> files(2);
+    vector<TString> files(4);
     files[0]="../Data/mc_ee_background.root";
     files[1]="../Data/mc_jpsi_ee.root";
-    vector<string> names(2);
+    files[2]="../Data/mc_mumu_background.root";
+    files[3]="../Data/mc_jpsi_mumu.root";
+
+
+    vector<string> names(4);
     names[0]="Background_yy_EE";
     names[1]="Background_Jpsi_EE";
+    names[2]="Background_yy_MuMu";
+    names[3]="Background_Jpsi_MuMu";
 
-    for(int f=0;f<2;f++)
+    for(int f=0;f<4;f++)
     {
         TString File=files[f];
         string name=names[f];
@@ -50,7 +56,8 @@ void BackgroundProton()
         float Lambda2;
         float Radius;
         float EtaRange;
-        bool  IsMuon;
+        bool  IsProton;
+
 
         //========================
         //Importing first ML data 
@@ -151,7 +158,7 @@ void BackgroundProton()
 
 
         int eventID=0;
-        int protoncount=0;
+        int protoncount=0,electroncount=0,muoncount=0;
 
         double zeroparticle=0, oneparticle=0, twoparticle=0, allparticles=0;
 
@@ -194,10 +201,7 @@ void BackgroundProton()
                     for(int i=0;i<2;i++)
                     {
                         allparticles++;
-
-                    
-                
-                        
+        
                         Topocluster(Proton[i],TopoCluNum,TopoCluEta,TopoCluPhi,TopoCluPt,TopoCluLamda,TopoCluLamda2,TopoCluR2,TopoCluEMProb,TopoCluPass,
                             CountProt,PerpProt,FProt,EMProt,LambdaProt,Lambda2Prot,RadiusProt,FVariable,EMprop,Lambda2,Lambda,Radius);
                         
@@ -267,13 +271,34 @@ void BackgroundProton()
                         ProtonEta->Fill(Proton[i].Eta());
                         ProtonPt->Fill(Proton[i].Pt());
                         ProtonPhi->Fill(Proton[i].Phi());  
-                        protoncount++;
+                        electroncount++;
                         }
-                    }    
+                    } 
+                    if(lepton==1 && Found>=1) 
+                    {   
+                        Pt->Fill(dipartic.Perp());
+                        Rapidity->Fill(dipartic.Rapidity());
+                        DiMass->Fill(dipartic.M());
+                        for(int i=0;i<2;i++)
+                        {
+                        H_PrPixeldEdX->Fill(TrackPixeldEdX[i]);
+                        H_PrPixelHits->Fill(TrackPixelHits[i]);
+                        H_PrPixelSCTHits->Fill(TrackSCTHits[i]);
+                        H_PrPixelTRTHits->Fill(TrackTRTHits[i]);
+
+                        ProtonEnergy->Fill(Proton[i].E());
+                        ProtonEta->Fill(Proton[i].Eta());
+                        ProtonPt->Fill(Proton[i].Pt());
+                        ProtonPhi->Fill(Proton[i].Phi());  
+                        muoncount++;
+                        }
+                    }   
                 }              
             }   
             
         }
+
+        outputFile->cd();
         EtaRangeHist->Write();
         DiMass->Write();
         Pt->Write();
@@ -294,12 +319,16 @@ void BackgroundProton()
         Lambda2Prot->Write();
         RadiusProt->Write();
         Response->Write();
+
         outputFile->Close();
+
 
         cout<<"==========================="<<endl;
         cout<<"End of file: "<<name<<endl;
         cout<<"Number of events: "<<eventID<<endl;
-        cout<<"Number of protons: "<<protoncount<<endl;
+        cout<<"Number of electrons: "<<electroncount<<endl;
+        cout<<"Number of muons: "<<muoncount<<endl;
+
         cout<<"==========================="<<endl;
         cout << "Found count:" << endl;
         cout << "  Two particles:      " << twoparticle      << "  Ratio " << twoparticle / allparticles  << endl;

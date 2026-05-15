@@ -26,9 +26,9 @@ plt.rcParams.update({'font.size': 14})
 #with uproot.open("Data/MLFinalDataTrueData.root") as f:
  #  df = f["MLDataTree"].arrays(library="pd")
 
-with uproot.open("Data/MLDataMCElectronFull.root") as f:
+with uproot.open("../Data/MLDataMCElectronFull.root") as f:
     df_Electron = f["MLDataTree"].arrays(library="pd")
-with uproot.open("Data/MLDataMCMuonFull.root") as f:
+with uproot.open("../Data/MLDataMCMuonFull.root") as f:
     df_Muon = f["MLDataTree"].arrays(library="pd")
 df = pd.concat([df_Electron, df_Muon], ignore_index=True)
 
@@ -75,7 +75,7 @@ rf.fit(X_train, y_train)
 initial_type = [('float_input', FloatTensorType([None, 9]))]
 onnx_model = convert_sklearn(rf, initial_types=initial_type, target_opset=17, options={type(rf): {"zipmap": False}})
 onnx_model.ir_version = 9
-with open("ONNX/RFMuonElectron.onnx", "wb") as fo:
+with open("../ONNX/RFMuonElectron.onnx", "wb") as fo:
     fo.write(onnx_model.SerializeToString())
 
 # ========================

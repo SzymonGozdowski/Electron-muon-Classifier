@@ -39,6 +39,12 @@ void Plotting()
         TH1D *DiMassMCProton = (TH1D*)MCProtonFile->Get("Dimass_MCProton");
         TH1D *DiMassBackgroundJpsi = (TH1D*)BackgroundJpsiFile->Get("Dimass_Background_Jpsi_EE");
         TH1D *DiMassBackgroundyy = (TH1D*)BackgroundyyFile->Get("Dimass_Background_yy_EE");
+
+        DiMassDataProton->Scale( 1.0 / DiMassDataProton->GetBinWidth(1) );
+        DiMassMCProton->Scale( 1.0 / DiMassMCProton->GetBinWidth(1) );
+        DiMassBackgroundJpsi->Scale( 1.0 / DiMassBackgroundJpsi->GetBinWidth(1) );
+        DiMassBackgroundyy->Scale( 1.0 / DiMassBackgroundyy->GetBinWidth(1) );
+
         //=========================
         //Plotting Double-sided crystal ball from J/Psi Electron Monte Carlo
         //=========================
@@ -129,7 +135,7 @@ void Plotting()
         FunData->SetParameter(7, 200);
         FunData->SetParameter(9, 200);
 
-        FunData->SetParLimits(0, 0, 1000);
+        FunData->SetParLimits(0, 0, 10000);
         FunData->SetParLimits(7, 0, 1000); 
         FunData->SetParLimits(9, 0, 1000); 
         
@@ -151,7 +157,7 @@ void Plotting()
 
         TCanvas *c4 = new TCanvas("c4", "c4", 800, 600);
         DiMassDataProton->SetLineColor(kBlack);
-        DiMassDataProton->SetTitle("J/#psi #rightarrow ee : Data Proton;Mass [GeV];Events");
+        DiMassDataProton->SetTitle("J/#psi #rightarrow ee : Data Proton;Mass [GeV];Events/GeV");
         DiMassDataProton->Draw("E");
         DiMassDataProton->GetXaxis()->SetRangeUser(2.8, 3.4);
         FunData->SetLineColor(kRed);
@@ -168,6 +174,12 @@ void Plotting()
         leg->Draw("same");
 
         c4->SaveAs("Plots/MassPlots/DataProton_Fit.png");
+        cout<<"========================="<<endl;
+        cout<<"Background Area: "<<FunDataBkg->Integral(2.92, 3.36)<<endl;
+        cout<<"Signal Area: "<<FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36)<<endl;
+        cout<<"Area Ratio (Background/Signal): "<<FunDataBkg->Integral(2.92, 3.36)/(FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36))<<endl;
+        cout<<"========================="<<endl;
+
 
 
     //Plotting Efficiency Control Plots

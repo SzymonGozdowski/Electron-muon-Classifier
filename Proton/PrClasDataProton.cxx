@@ -13,8 +13,28 @@
 #include <vector>
 #include "../Topoclusters/Topocluster.C"
 
+std::vector<float> load_line(const std::string& path, int line_no)
+{
+    std::ifstream in(path);
+    if (!in.is_open())
+        throw std::runtime_error("No file scalars.txt");
 
-void DataProton()
+    std::string line;
+    for (int i = 0; i <= line_no; i++)
+        std::getline(in, line);
+
+    std::vector<float> vals;
+    std::stringstream ss(line);
+    std::string item;
+
+    while (std::getline(ss, item, ',')) {
+        vals.push_back(std::stof(item));
+    }
+
+    return vals;
+}
+
+void PrClasDataProton()
 {
     gROOT->SetBatch(kTRUE);
     gROOT->ProcessLine("gErrorIgnoreLevel = 3000;");
@@ -25,12 +45,12 @@ void DataProton()
     Double_t pi = TMath::Pi();
     double DEG  = 180 / TMath::Pi();
     TString File="../Data/data23_2trk_moreTCvars.root";
-    string name="DataProton";
+    string name="PrClasDataProton";
 
     TFile *outputFile = new TFile(Form("Plots/%s_hist.root", name.c_str()), "RECREATE");
     float PixelHits, PixelTRTHits, PixeldEdX, PixelSCTHits;
     float FVariable, EMprop, Lambda, Lambda2, Radius, EtaRange;
-    bool  IsMuon;
+    bool  IsProton;
 
     //========================
     // ML setup
@@ -38,7 +58,7 @@ void DataProton()
     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "rf");
     Ort::SessionOptions session_options;
     session_options.SetIntraOpNumThreads(1);
-    Ort::Session session(env, "../ONNX/RFMuonElectron.onnx", session_options);
+    Ort::Session session(env, "../ONNX/XgbProtonBackground.onnx", session_options);
     Ort::AllocatorWithDefaultOptions allocator;
 
     auto input_name_alloc  = session.GetInputNameAllocated(0, allocator);
@@ -46,16 +66,23 @@ void DataProton()
     const char* input_name     = input_name_alloc.get();
     const char* output_names[] = {"label", "probabilities"};
 
+
+
+    auto scaler_mean  = load_line("../ONNX/scalars.txt", 0);
+    auto scaler_scale = load_line("../ONNX/scalars.txt", 1);
+
+
     //========================
     // Histogramy
     //========================
 
-    TH1D *DiMassFull = new TH1D("DiMass_DataProton","Full pair mass ", 100, 2.5, 3.5);
-    TH1D *DiMassProton  = new TH1D("DiMassProton_DataProton", "Proton pair mass",100, 2.5, 3.5);
-    TH1D *EtaFull  = new TH1D("EtaFull_DataProton","Eta Full - ", 30, -3,  3);
-    TH1D *EtaProton = new TH1D("ProtonEta_DataProton","Proton #eta - ",  30, -3,  3);
-    TH1D *EnergyFull = new TH1D("EnergyFull_DataProton","Energy Full - ", 30,  0,  6);
-    TH1D *EnergyProton= new TH1D("ProtonEnergy_DataProton", "Proton Energy - ", 30,  0,  6);
+    TH1D *DiMassProton  = new TH1D("DiMassProton_PrClasDataProton", "Proton pair mass",100, 2.5, 3.5);
+    TH1D *EtaFull  = new TH1D("EtaFull_PrClasDataProton","Eta Full - ", 30, -3,  3);
+    TH1D *EtaProton = new TH1D("ProtonEta_PrClasDataProton","Proton #eta - ",  30, -3,  3);
+    TH1D *EnergyFull = new TH1D("EnergyFull_PrClasDataProton","Energy Full - ", 30,  0,  6);
+    TH1D *EnergyProton= new TH1D("ProtonEnergy_PrClasDataProton", "Proton Energy - ", 30,  0,  6);
+    TH1D *ResponseHist= new TH1D("Response_PrClasDataProton", "ML Response - ", 30,  0,  1);
+
 
 
 
@@ -99,33 +126,23 @@ void DataProton()
         if (eventID % 400000 == 0) cout << "Processing " << eventID << " event..." << endl;
         eventID++;
         //if (eventID > 20) break;
-        vector<TLorentzVector> Proton(2), t_prim(2);
+        vector<TLorentzVector> Proton(2);
         int count = 0;
 
         if (int(TrackNum[0]) != 2) continue;
         for (int track = 0; track < int(TrackNum[0]); track++) {
             if (abs(TrackEta[track]) < 2.5 && TrackPt[track] > 1) {
-                t_prim[track].SetPtEtaPhiM(TrackPt[track], TrackEta[track], TrackPhi[track], MuonMass);
+                Proton[track].SetPtEtaPhiM(TrackPt[track], TrackEta[track], TrackPhi[track], ProtonMass);
                 count++;
             } else break;
         }
 
         if (count == 2 && TrackCharge[0] != TrackCharge[1]) {
-            TLorentzVector dipartic_prim = t_prim[0] + t_prim[1];
+            TLorentzVector dipartic = Proton[0] + Proton[1];
 
-            if (dipartic_prim .Perp() < 0.2 && dipartic_prim .M() < 2.8 && dipartic_prim .M() > 2) { //Mass range can be changed
-                Proton[0].SetPtEtaPhiM(t_prim[0].Perp(), t_prim[0].Eta(), t_prim[0].Phi(), ProtonMass);
-                Proton[1].SetPtEtaPhiM(t_prim[1].Perp(), t_prim[1].Eta(), t_prim[1].Phi(), ProtonMass);
-                TLorentzVector dipartic = Proton[0] + Proton[1];
-                EtaFull->Fill(Proton[0].Eta());
-                EtaFull->Fill(Proton[1].Eta());
-                EnergyFull->Fill(Proton[0].E());
-                EnergyFull->Fill(Proton[1].E());
-                DiMassFull->Fill(dipartic.M());
+            if (dipartic.Perp() < 0.2 && dipartic.M() < 3.36 && dipartic.M() > 2.92) {
 
-
-
-                float probcut   = 0.5;
+                float probcut   = 0.86;
                 float response[2] = {probcut, probcut};
                 int   Found     = 0;
 
@@ -142,30 +159,32 @@ void DataProton()
                     if (FVariable == -1) continue;
 
                     std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits, PixeldEdX, FVariable, EMprop, Lambda, Lambda2, Radius};
+                    for (size_t i = 0; i < input.size(); i++)
+                        input[i] = (input[i] - scaler_mean[i]) / scaler_scale[i];
                     std::vector<int64_t> input_shape = {1, 9};
                     Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
                         allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
                     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, &input_name, &input_tensor, 1, output_names, 2);
                     float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
                     response[i] = prob_ptr[1];
+                    ResponseHist->Fill(response[i]);
                     Found++;
                 }
-
-                int lepton=2;
+                IsProton = -1;
                 int rightlepton=2;
                 if(Found==0) zeroparticle+=2;
                 else if(Found==1)
                 {
                     if(response[0]==probcut)
                     {
-                        if(response[1]<probcut-0.15) lepton=0;
-                        else if(response[1]>probcut+0.15) lepton=1;
+                        if(response[1]<probcut) IsProton=0;
+                        else if(response[1]>probcut) IsProton=1;
                         else Found=0;
                     } 
                     else if(response[1]==probcut)
                     {
-                        if(response[0]<probcut-0.15) lepton=0;
-                        else if(response[0]>probcut+0.15) lepton=1;
+                        if(response[0]<probcut) IsProton=0;
+                        else if(response[0]>probcut) IsProton=1;
                         else Found=0;
                     } 
                     oneparticle+=2;
@@ -173,21 +192,21 @@ void DataProton()
                 else if(Found==2) 
                 {
                     twoparticle+=2;
-                    if((response[0]+response[1])/2<probcut-0.15) lepton=0;
-                    else if((response[0]+response[1])/2>probcut+0.15) lepton=1;
-                    else
-                    {
-                        diffrentparticle+=2;
-                        Found=0;
-                    } 
+                    if((response[0]+response[1])/2<probcut) IsProton=0;
+                    else if((response[0]+response[1])/2>probcut) IsProton=1;
+
                 }
 
                 //========================
                 // Protons
                 //========================
-                if (lepton == 0 && Found >= 1) {
+                if (IsProton == 1 && Found >= 1) {
                     DiMassProton->Fill(dipartic.M());
-                    for (int i = 0; i < 2; i++) {        
+                    for (int i = 0; i < 2; i++) {    
+                        EtaFull->Fill(Proton[0].Eta());
+                        EtaFull->Fill(Proton[1].Eta());
+                        EnergyFull->Fill(Proton[0].E());
+                        EnergyFull->Fill(Proton[1].E());    
                         EnergyProton->Fill(Proton[i].E());
                         EtaProton->Fill(Proton[i].Eta());
                         
@@ -216,12 +235,12 @@ void DataProton()
     // Saving histograms
     //========================
     outputFile->cd();
-    DiMassFull->Write();
     DiMassProton->Write();   
     EtaFull->Write();
     EtaProton->Write();
     EnergyFull->Write();
     EnergyProton->Write();
+    ResponseHist->Write();
     outputFile->Close();
 
 }

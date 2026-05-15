@@ -44,7 +44,24 @@ void MCProton()
     float Lambda2;
     float Radius;
     float EtaRange;
-    bool  IsMuon;
+    bool  IsProton;
+
+    TFile *dataFile = new TFile(Form("../Data/MLData%s.root",name.c_str()), "RECREATE");
+    TTree *MLDataTree = new TTree("MLDataTree", "MLDataTree");
+
+    MLDataTree->Branch("track_PixelHits", &PixelHits, "track_PixelHits/F");
+    MLDataTree->Branch("track_TRTHits", &PixelTRTHits, "track_PixelTRTHits/F");
+    MLDataTree->Branch("track_PixeldEdX", &PixeldEdX, "track_PixeldEdX/F");
+    MLDataTree->Branch("track_SCTHits", &PixelSCTHits, "track_PixelSCTHits/F");
+    MLDataTree->Branch("Cal_FVariable", &FVariable, "Cal_FVariable/F");
+    MLDataTree->Branch("Cal_EMprop", &EMprop, "Cal_EMprop/F");
+    MLDataTree->Branch("Cal_Lambda", &Lambda, "Cal_Lambda/F");
+    MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
+    MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
+    MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
+
+    MLDataTree->Branch("IsProton", &IsProton, "IsProton/B");
+
 
     //========================
     //Importing first ML data 
@@ -243,6 +260,9 @@ void MCProton()
                     else if(abs(Proton[i].Eta())>1.5 && abs(Proton[i].Eta())<2.5) EtaRange=3;
                     EtaRangeHist->Fill(EtaRange);
                     protoncount+=2;
+                    IsProton=1;
+                    MLDataTree->Fill();
+
                 }
 
 
@@ -314,6 +334,26 @@ void MCProton()
             
         
     }
+
+    
+    dataFile->cd();
+    MLDataTree->Write();
+
+    cout<<"==========================="<<endl;
+    cout<<"End of file: "<<name<<endl;
+    cout<<"Number of events: "<<eventID<<endl;
+    cout<<"Number of protons: "<<protoncount<<endl;
+    cout<<"Number of muon-like leptons: "<<muonlikecount<<" Ratio: "<<(float)muonlikecount/protoncount<<endl;
+    cout<<"Number of electron-like leptons: "<<electronlikecount<<" Ratio: "<<(float)electronlikecount/protoncount<<endl;
+    cout<<"Ratio of electron-like/muon-like leptons: "<<(float)electronlikecount/muonlikecount<<endl;
+    cout<<"==========================="<<endl;
+    cout << "Found count:" << endl;
+    cout << "  Two particles:      " << twoparticle      << "  Ratio " << twoparticle / allparticles  << endl;
+    cout << "  One particle:       " << oneparticle       << "  Ratio " << oneparticle / allparticles   << endl;
+    cout << "  Zero particles:     " << zeroparticle     << "  Ratio " << zeroparticle / allparticles << endl;
+    cout << "===========================" << endl;
+
+    outputFile->cd();
     EtaRangeHist->Write();
     DiMass->Write();
     DiMassMuonLikeProton->Write();
@@ -340,21 +380,10 @@ void MCProton()
     Lambda2Prot->Write();
     RadiusProt->Write();
     Response->Write();
-    outputFile->Close();
 
-    cout<<"==========================="<<endl;
-    cout<<"End of file: "<<name<<endl;
-    cout<<"Number of events: "<<eventID<<endl;
-    cout<<"Number of protons: "<<protoncount<<endl;
-    cout<<"Number of muon-like leptons: "<<muonlikecount<<" Ratio: "<<(float)muonlikecount/protoncount<<endl;
-    cout<<"Number of electron-like leptons: "<<electronlikecount<<" Ratio: "<<(float)electronlikecount/protoncount<<endl;
-    cout<<"Ratio of electron-like/muon-like leptons: "<<(float)electronlikecount/muonlikecount<<endl;
-    cout<<"==========================="<<endl;
-    cout << "Found count:" << endl;
-    cout << "  Two particles:      " << twoparticle      << "  Ratio " << twoparticle / allparticles  << endl;
-    cout << "  One particle:       " << oneparticle       << "  Ratio " << oneparticle / allparticles   << endl;
-    cout << "  Zero particles:     " << zeroparticle     << "  Ratio " << zeroparticle / allparticles << endl;
-    cout << "===========================" << endl;
+    outputFile->Close();
+    dataFile->Close();
+  
 
     
     
