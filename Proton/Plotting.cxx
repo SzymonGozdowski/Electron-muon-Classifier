@@ -30,6 +30,8 @@ void Plotting()
     TFile *MCProtonFile = new TFile("Plots/MCProton_hist.root","READ");
     TFile *BackgroundJpsiFile = new TFile("Plots/Background_Jpsi_EE_hist.root","READ");
     TFile *BackgroundyyFile = new TFile("Plots/Background_yy_EE_hist.root","READ");
+    TFile *MCtestProtonAlgorithm = new TFile("Plots/MCtestProtonAlgorithm_hist.root","READ");
+
 
 
     
@@ -156,8 +158,9 @@ void Plotting()
         }
 
         TCanvas *c4 = new TCanvas("c4", "c4", 800, 600);
+        c4->SetLeftMargin(0.15);
         DiMassDataProton->SetLineColor(kBlack);
-        DiMassDataProton->SetTitle("J/#psi #rightarrow ee : Data Proton;Mass [GeV];Events/GeV");
+        DiMassDataProton->SetTitle("J/#psi #rightarrow p#bar{p} : Data Proton;Mass [GeV];Events/GeV");
         DiMassDataProton->Draw("E");
         DiMassDataProton->GetXaxis()->SetRangeUser(2.8, 3.4);
         FunData->SetLineColor(kRed);
@@ -172,6 +175,13 @@ void Plotting()
         leg->AddEntry(FunData,"Fit","L");
         leg->AddEntry(FunDataBkg,"Background","L");
         leg->Draw("same");
+        TLatex *text = new TLatex();
+        text->SetNDC();
+        text->SetTextSize(0.035);
+        text->DrawLatex(0.17, 0.87, Form("Statistical Signal Significance : %.2f", 
+            (FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36)) / sqrt(FunData->Integral(2.92, 3.36) + FunDataBkg->Integral(2.92, 3.36))));
+        
+
 
         c4->SaveAs("Plots/MassPlots/DataProton_Fit.png");
         cout<<"========================="<<endl;
@@ -203,12 +213,49 @@ void Plotting()
         TCanvas *c5 = new TCanvas("c5", "c5", 800, 600);
         EnergyEfficiency->SetTitle("Efficiency of Electron Energy Cut;Energy [GeV];Efficiency");
         EnergyEfficiency->Draw();
-        c5->SaveAs("Plots/EfficiencyPlots/EnergyEfficiency.png");
+        c5->SaveAs("Plots/EfficiencyPlots/ElectronEnergyEfficiency.png");
 
         TCanvas *c6 = new TCanvas("c6", "c6", 800, 600);
         EtaEfficiency->SetTitle("Efficiency of Electron Eta Cut;Eta;Efficiency");
         EtaEfficiency->Draw();
-        c6->SaveAs("Plots/EfficiencyPlots/EtaEfficiency.png");
+        c6->SaveAs("Plots/EfficiencyPlots/ElectronEtaEfficiency.png");
+    //Plotting Efficiency of Proton Algorithm of MC Proton
+        TH1D *MCProtonEnergy = (TH1D*)MCtestProtonAlgorithm->Get("ProtonEnergy_MCtestProtonAlgorithm");
+        TH1D *MCProtonEta = (TH1D*)MCtestProtonAlgorithm->Get("EtaProton_MCtestProtonAlgorithm");
+        TH1D *MCProtonEnergyAfter = (TH1D*)MCtestProtonAlgorithm->Get("ProtonEnergyAfterAlgorithm_MCtestProtonAlgorithm");
+        TH1D *MCProtonEtaAfter  = (TH1D*)MCtestProtonAlgorithm->Get("EtaProtonAfterAlgorithm_MCtestProtonAlgorithm");
+     
+
+        //==========================
+        //Plotting Efficiency in MonteCarlo
+        //==========================
+        MCProtonEnergyAfter = (TH1D*)MCProtonEnergyAfter->Rebin(2, "ProtonEnergyAfter_rebinned");
+        MCProtonEnergy       = (TH1D*)MCProtonEnergy->Rebin(2, "ProtonEnergy_rebinned");
+
+        MCProtonEtaAfter = (TH1D*)MCProtonEtaAfter->Rebin(2, "ProtonEtaAfter_rebinned");
+        MCProtonEta       = (TH1D*)MCProtonEta->Rebin(2, "ProtonEta_rebinned");
+        TEfficiency *ProtonEnergyEfficiency = new TEfficiency(*MCProtonEnergyAfter, *MCProtonEnergy);
+        TEfficiency *ProtonEtaEfficiency = new TEfficiency(*MCProtonEtaAfter, *MCProtonEta);
+
+        TCanvas *c7 = new TCanvas("c7", "c7", 800, 600);
+        ProtonEnergyEfficiency->SetTitle("Efficiency of Proton Algorithm Energy;Energy [GeV];Efficiency");
+        ProtonEnergyEfficiency->Draw();
+        c7->SaveAs("Plots/EfficiencyPlots/ProtonEnergyEfficiency.png");
+
+        TCanvas *c8 = new TCanvas("c8", "c8", 800, 600);
+        ProtonEtaEfficiency->SetTitle("Efficiency of Proton Algorithm Eta;Eta;Efficiency");
+        ProtonEtaEfficiency->Draw();
+        c8->SaveAs("Plots/EfficiencyPlots/ProtonEtaEfficiency.png");
+
+    //Plotting 2D distribiution of dE/dx over Momentum in Data
+
+        TH2D *dEdxOverMomProton = (TH2D*)DataFile->Get("Pixel_dEdx_over_Mom_Hist2");
+        TCanvas *c9 = new TCanvas("c9", "c9", 800, 600);
+        gPad->SetLogz(1);
+        dEdxOverMomProton->SetTitle("Pixel dE/dx over Momentum for Protons;Momentum [GeV];dE/dx [?]");
+        dEdxOverMomProton->Draw("COLZ");
+        c9->SaveAs("Plots/EfficiencyPlots/dEdxOverMomentum_Proton.png");
+        gPad->SetLogz(0);
 
     }
 

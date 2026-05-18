@@ -30,7 +30,11 @@ with uproot.open("../Data/MLDataMCElectronFull.root") as f:
     df_Electron = f["MLDataTree"].arrays(library="pd")
 with uproot.open("../Data/MLDataMCMuonFull.root") as f:
     df_Muon = f["MLDataTree"].arrays(library="pd")
-df = pd.concat([df_Electron, df_Muon], ignore_index=True)
+with uproot.open("../Data/MLDataMCElectronBackground.root") as f:
+    df_Electron_Background = f["MLDataTree"].arrays(library="pd")
+with uproot.open("../Data/MLDataMCMuonBackground.root") as f:
+    df_Muon_Background = f["MLDataTree"].arrays(library="pd")
+df = pd.concat([df_Electron, df_Muon, df_Electron_Background, df_Muon_Background], ignore_index=True)
 
 eta_values = {
     0: 'FullRange',

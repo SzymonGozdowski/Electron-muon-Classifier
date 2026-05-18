@@ -56,7 +56,8 @@ void DataProton()
     TH1D *EtaProton = new TH1D("ProtonEta_DataProton","Proton #eta - ",  30, -3,  3);
     TH1D *EnergyFull = new TH1D("EnergyFull_DataProton","Energy Full - ", 30,  0,  6);
     TH1D *EnergyProton= new TH1D("ProtonEnergy_DataProton", "Proton Energy - ", 30,  0,  6);
-
+    TH1D *Pixel_dEdx_Hist= new TH1D("Pixel_dEdx_DataProton", "Pixel dE/dx - ", 30,  0,  3);
+    TH2D *Pixel_dEdx_over_Mom_Hist2= new TH2D("Pixel_dEdx_over_Mom_Hist2", "Pixel dE/dx over Momentum - ", 100,  0.95,  2.5, 100, 0, 5);
 
 
     //========================
@@ -138,6 +139,8 @@ void DataProton()
                     PixelHits    = TrackPixelHits[i];
                     PixelTRTHits = TrackTRTHits[i];
                     PixeldEdX    = TrackPixeldEdX[i];
+                    Pixel_dEdx_Hist->Fill(PixeldEdX);
+                    Pixel_dEdx_over_Mom_Hist2->Fill(Proton[i].P(), PixeldEdX);
                     PixelSCTHits = TrackSCTHits[i];
                     if (FVariable == -1) continue;
 
@@ -222,6 +225,8 @@ void DataProton()
     EtaProton->Write();
     EnergyFull->Write();
     EnergyProton->Write();
+    Pixel_dEdx_Hist->Write();
+    Pixel_dEdx_over_Mom_Hist2->Write();
     outputFile->Close();
 
 }

@@ -59,6 +59,22 @@ void BackgroundProton()
         bool  IsProton;
 
 
+        TFile *dataFile = new TFile(Form("../Data/MLData%s.root",name.c_str()), "RECREATE");
+        TTree *MLDataTree = new TTree("MLDataTree", "MLDataTree");
+
+        MLDataTree->Branch("track_PixelHits", &PixelHits, "track_PixelHits/F");
+        MLDataTree->Branch("track_TRTHits", &PixelTRTHits, "track_PixelTRTHits/F");
+        MLDataTree->Branch("track_PixeldEdX", &PixeldEdX, "track_PixeldEdX/F");
+        MLDataTree->Branch("track_SCTHits", &PixelSCTHits, "track_PixelSCTHits/F");
+        MLDataTree->Branch("Cal_FVariable", &FVariable, "Cal_FVariable/F");
+        MLDataTree->Branch("Cal_EMprop", &EMprop, "Cal_EMprop/F");
+        MLDataTree->Branch("Cal_Lambda", &Lambda, "Cal_Lambda/F");
+        MLDataTree->Branch("Cal_Lambda2", &Lambda2, "Cal_Lambda2/F");
+        MLDataTree->Branch("Cal_Radius", &Radius, "Cal_Radius/F");
+        MLDataTree->Branch("EtaRange", &EtaRange, "EtaRange/F");
+
+        MLDataTree->Branch("IsProton", &IsProton, "IsProton/B");
+
         //========================
         //Importing first ML data 
         //One must install onnxruntime
@@ -224,6 +240,8 @@ void BackgroundProton()
                         else if(abs(Proton[i].Eta())>1 && abs(Proton[i].Eta())<1.5) EtaRange=2;
                         else if(abs(Proton[i].Eta())>1.5 && abs(Proton[i].Eta())<2.5) EtaRange=3;
                         EtaRangeHist->Fill(EtaRange);
+                        IsProton=0;
+                        MLDataTree->Fill();
                     }
 
 
@@ -297,6 +315,8 @@ void BackgroundProton()
             }   
             
         }
+        dataFile->cd();
+        MLDataTree->Write();
 
         outputFile->cd();
         EtaRangeHist->Write();
@@ -320,6 +340,7 @@ void BackgroundProton()
         RadiusProt->Write();
         Response->Write();
 
+        dataFile->Close();
         outputFile->Close();
 
 

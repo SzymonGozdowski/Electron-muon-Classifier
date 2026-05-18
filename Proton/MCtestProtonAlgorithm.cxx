@@ -34,7 +34,7 @@ std::vector<float> load_line(const std::string& path, int line_no)
     return vals;
 }
 
-void PrClasDataProton()
+void MCtestProtonAlgorithm()
 {
     gROOT->SetBatch(kTRUE);
     gROOT->ProcessLine("gErrorIgnoreLevel = 3000;");
@@ -44,8 +44,8 @@ void PrClasDataProton()
     const Float_t ElectronMass = 0.00051099895;
     Double_t pi = TMath::Pi();
     double DEG  = 180 / TMath::Pi();
-    TString File="../Data/data23_2trk_moreTCvars.root";
-    string name="PrClasDataProton";
+    TString File="../Data/starlight_jpsiall_pptruth.root";
+    string name="MCtestProtonAlgorithm";
 
     TFile *outputFile = new TFile(Form("Plots/%s_hist.root", name.c_str()), "RECREATE");
     float PixelHits, PixelTRTHits, PixeldEdX, PixelSCTHits;
@@ -81,12 +81,14 @@ void PrClasDataProton()
     // Histogramy
     //========================
 
-    TH1D *DiMassProton  = new TH1D("DiMassProton_PrClasDataProton", "Proton pair mass",100, 2.5, 3.5);
-    TH1D *EtaFull  = new TH1D("EtaFull_PrClasDataProton","Eta Full - ", 30, -3,  3);
-    TH1D *EtaProton = new TH1D("ProtonEta_PrClasDataProton","Proton #eta - ",  30, -3,  3);
-    TH1D *EnergyFull = new TH1D("EnergyFull_PrClasDataProton","Energy Full - ", 30,  0,  6);
-    TH1D *EnergyProton= new TH1D("ProtonEnergy_PrClasDataProton", "Proton Energy - ", 30,  0,  6);
-    TH1D *ResponseHist= new TH1D("Response_PrClasDataProton", "ML Response - ", 30,  0,  1);
+    TH1D *DiMassProton  = new TH1D("DiMassProton_MCtestProtonAlgorithm", "Proton pair mass",100, 2.5, 3.5);
+    TH1D *DiMassProtonAfterAlgorithm  = new TH1D("DiMassProtonAfterAlgorithm_MCtestProtonAlgorithm", "Proton pair mass",100, 2.5, 3.5);
+
+    TH1D *EtaProton  = new TH1D("EtaProton_MCtestProtonAlgorithm","Eta Proton - ", 30, -3,  3);
+    TH1D *EnergyProton= new TH1D("ProtonEnergy_MCtestProtonAlgorithm", "Proton Energy - ", 30,  0,  6);
+    TH1D *EtaProtonAfterAlgorithm  = new TH1D("EtaProtonAfterAlgorithm_MCtestProtonAlgorithm","Eta Proton After Algorithm - ", 30, -3,  3);
+    TH1D *EnergyProtonAfterAlgorithm= new TH1D("ProtonEnergyAfterAlgorithm_MCtestProtonAlgorithm", "Proton Energy After Algorithm - ", 30,  0,  6);
+    TH1D *ResponseHist= new TH1D("Response_MCtestProtonAlgorithm", "ML Response - ", 30,  0,  1);
 
 
 
@@ -123,16 +125,24 @@ void PrClasDataProton()
     TTreeReaderArray<float>        TopoCluEMProb(tree_reader, "topo_cluster_EM_prob");
     TTreeReaderArray<bool>         TopoCluPass(tree_reader,   "topo_cluster_pass_sig_cut");
 
+    TTreeReaderArray<float> TruthPrEta(tree_reader, "truth_monopole_eta");
+    TTreeReaderArray<float> TruthPrPhi(tree_reader, "truth_monopole_phi");
+    TTreeReaderArray<float> TruthPrPt(tree_reader, "truth_monopole_pt");
+    TTreeReaderArray<float> TruthPrMass(tree_reader, "truth_monopole_m");
+
     int   eventID = 0;
     float protoncount = 0, diffrentparticle = 0;
     float zeroparticle = 0, oneparticle = 0, twoparticle = 0, allparticles = 0;
 
     while (tree_reader.Next()) {
+
         if (eventID % 400000 == 0) cout << "Processing " << eventID << " event..." << endl;
         eventID++;
         //if (eventID > 20) break;
         vector<TLorentzVector> Proton(2);
         int count = 0;
+        if(TruthPrEta.GetSize()!=2) continue;
+        if(TruthPrPt[0]<0.9 || TruthPrPt[1]<0.9) continue;
 
         if (int(TrackNum[0]) != 2) continue;
         for (int track = 0; track < int(TrackNum[0]); track++) {
@@ -146,14 +156,16 @@ void PrClasDataProton()
             TLorentzVector dipartic = Proton[0] + Proton[1];
 
             if (dipartic.Perp() < 0.2 && dipartic.M() < 3.36 && dipartic.M() > 2.92) {
+                DiMassProton->Fill(dipartic.M());
+                EtaProton->Fill(Proton[0].Eta());
+                EtaProton->Fill(Proton[1].Eta());
+                EnergyProton->Fill(Proton[0].E());
+                EnergyProton->Fill(Proton[1].E());
 
-                float probcutElectron   = 0.5;
-                float probcutProton   = 0.8;
-
-                float responseElectron[2] = {probcutElectron, probcutElectron};
+                float probcutProton   = 0.6;
                 float responseProton[2] = {probcutProton, probcutProton};
 
-                int   Found     = 0;
+                int Found=0;
                 for (int i = 0; i < 2; i++) {
                     allparticles++;
                     Topocluster(Proton[i], TopoCluNum, TopoCluEta, TopoCluPhi, TopoCluPt,
@@ -164,54 +176,34 @@ void PrClasDataProton()
                     PixelTRTHits = TrackTRTHits[i];
                     PixeldEdX    = TrackPixeldEdX[i];
                     PixelSCTHits = TrackSCTHits[i];
-                    if (FVariable == -1) continue;
-
-                    std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,PixeldEdX,  FVariable, EMprop, Lambda, Lambda2, Radius}; 
-                    std::vector<int64_t> input_shape = {1, 9};
-                    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-                        allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
-                    auto output_tensors = session2.Run(Ort::RunOptions{nullptr}, &input_name2, &input_tensor, 1, output_names2, 2);
-                    float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
-                    responseElectron[i] = prob_ptr[1];
-                    Found++;
-                }
-                for (int i = 0; i < 2; i++) {
-                    allparticles++;
-                    Topocluster(Proton[i], TopoCluNum, TopoCluEta, TopoCluPhi, TopoCluPt,
-                        TopoCluLamda, TopoCluLamda2, TopoCluR2, TopoCluEMProb, TopoCluPass,
-                        FVariable, EMprop, Lambda2, Lambda, Radius);
-
-                    PixelHits    = TrackPixelHits[i];
-                    PixelTRTHits = TrackTRTHits[i];
-                    PixeldEdX    = TrackPixeldEdX[i];
-                    PixelSCTHits = TrackSCTHits[i];
-                    if (FVariable == -1) continue;
-
-                    std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,  FVariable, EMprop, Lambda, Lambda2, Radius}; //PixeldEdX,
-                    for (size_t i = 0; i < input.size(); i++)
-                        input[i] = (input[i] - scaler_mean[i]) / scaler_scale[i];
-                    std::vector<int64_t> input_shape = {1, 8};
-                    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-                        allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
-                    auto output_tensors = session1.Run(Ort::RunOptions{nullptr}, &input_name1, &input_tensor, 1, output_names1, 2);
-                    float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
-                    responseProton[i] = prob_ptr[1];
-                    ResponseHist->Fill(responseProton[i]);
-                    Found++;
+                    if (FVariable == -1) responseProton[i]=probcutProton;
+                    else{
+                        std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,  FVariable, EMprop, Lambda, Lambda2, Radius}; //PixeldEdX,
+                        for (size_t i = 0; i < input.size(); i++)
+                            input[i] = (input[i] - scaler_mean[i]) / scaler_scale[i];
+                        std::vector<int64_t> input_shape = {1, 8};
+                        Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+                            allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
+                        auto output_tensors = session1.Run(Ort::RunOptions{nullptr}, &input_name1, &input_tensor, 1, output_names1, 2);
+                        float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
+                        responseProton[i] = prob_ptr[1];
+                        ResponseHist->Fill(responseProton[i]);
+                        Found++;
+                    }
                 }
                 IsProton = 0;
                 int rightlepton=2;
                 if(Found==0) zeroparticle+=2;
                 else if(Found==1)
                 {
-                    if(responseElectron[0]==probcutElectron)
+                    if(responseProton[0]==probcutProton)
                     {
-                        if(responseElectron[1]<probcutElectron && responseProton[1]>probcutProton) IsProton=1;
+                        if(responseProton[1]>probcutProton) IsProton=1;
                         else Found=0;
                     } 
-                    else if(responseElectron[1]==probcutElectron)
+                    else if(responseProton[1]==probcutProton)
                     {
-                        if(responseElectron[0]<probcutElectron && responseProton[0]>probcutProton) IsProton=1;
+                        if(responseProton[0]>probcutProton) IsProton=1;
                         else Found=0;
                     } 
                     oneparticle+=2;
@@ -219,21 +211,18 @@ void PrClasDataProton()
                 else if(Found==2) 
                 {
                     twoparticle+=2;
-                    if((responseElectron[0]+responseElectron[1])/2<probcutElectron && (responseProton[0]+responseProton[1])/2>probcutProton) IsProton=1;
+                    if((responseProton[0]+responseProton[1])/2>probcutProton) IsProton=1;
                 }
 
                 //========================
                 // Protons
                 //========================
                 if (IsProton == 1 && Found >= 1) {
-                    DiMassProton->Fill(dipartic.M());
+                    DiMassProtonAfterAlgorithm->Fill(dipartic.M());
                     for (int i = 0; i < 2; i++) {    
-                        EtaFull->Fill(Proton[0].Eta());
-                        EtaFull->Fill(Proton[1].Eta());
-                        EnergyFull->Fill(Proton[0].E());
-                        EnergyFull->Fill(Proton[1].E());    
-                        EnergyProton->Fill(Proton[i].E());
-                        EtaProton->Fill(Proton[i].Eta());
+                            
+                        EnergyProtonAfterAlgorithm->Fill(Proton[i].E());
+                        EtaProtonAfterAlgorithm->Fill(Proton[i].Eta());
                         
                         protoncount++;   
                     }
@@ -260,11 +249,12 @@ void PrClasDataProton()
     // Saving histograms
     //========================
     outputFile->cd();
-    DiMassProton->Write();   
-    EtaFull->Write();
+    DiMassProton->Write(); 
+    DiMassProtonAfterAlgorithm->Write();  
     EtaProton->Write();
-    EnergyFull->Write();
+    EtaProtonAfterAlgorithm->Write();
     EnergyProton->Write();
+    EnergyProtonAfterAlgorithm->Write();
     ResponseHist->Write();
     outputFile->Close();
 

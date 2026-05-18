@@ -34,10 +34,12 @@ with uproot.open("../Data/MLDataBackground_Jpsi_EE.root") as f:
     df_Background1 = f["MLDataTree"].arrays(library="pd")
 with uproot.open("../Data/MLDataBackground_yy_EE.root") as f:
     df_Background2 = f["MLDataTree"].arrays(library="pd")
+    '''
 with uproot.open("../Data/MLDataBackground_Jpsi_MuMu.root") as f:
     df_Background3 = f["MLDataTree"].arrays(library="pd")
 with uproot.open("../Data/MLDataBackground_yy_MuMu.root") as f:
     df_Background4 = f["MLDataTree"].arrays(library="pd")
+    '''
 with uproot.open("../Data/MLDataMCProton.root") as f:
     df_Proton = f["MLDataTree"].arrays(library="pd")
     
@@ -48,8 +50,8 @@ with uproot.open("../Data/MLDataMCProton.root") as f:
 n_bkg = (
     len(df_Background1)
     + len(df_Background2)
-    + len(df_Background3)
-    + len(df_Background4)
+    #+ len(df_Background3)
+    #+ len(df_Background4)
 )
 
 n_proton = len(df_Proton)
@@ -60,12 +62,12 @@ print(f"\nWeights: background/proton = {ratio:.2f}/{data_ratio:.2f}")
 
 df_Background1["weight"] = 1.0
 df_Background2["weight"] = 1.0
-df_Background3["weight"] = 1.0
-df_Background4["weight"] = 1.0
+#df_Background3["weight"] = 1.0
+#df_Background4["weight"] = 1.0
 
 df_Proton["weight"] = ratio/data_ratio
 
-df = pd.concat([df_Background1, df_Background2, df_Background3, df_Background4, df_Proton], ignore_index=True)
+df = pd.concat([df_Background1, df_Background2, df_Proton], ignore_index=True) # df_Background3, df_Background4,
 
 eta_values = {
     0: 'FullRange',
@@ -76,7 +78,8 @@ eta_values = {
                         
 features_list = [
     'track_PixelHits', 'track_TRTHits', 'track_SCTHits',
-    'track_PixeldEdX', 'Cal_FVariable', 'Cal_EMprop',
+    #'track_PixeldEdX',
+     'Cal_FVariable', 'Cal_EMprop',
     'Cal_Lambda', 'Cal_Lambda2', 'Cal_Radius'
 ]
 
@@ -224,7 +227,7 @@ with PdfPages("Plots/XGB_Output.pdf") as pdf:
     gs = gridspec.GridSpec(2, 3, figure=fig, hspace=0.4, wspace=0.35)
 
     ax_cm = fig.add_subplot(gs[0, 0])
-    y_pred_f1 = (y_probs >=0.86).astype(int)
+    y_pred_f1 = (y_probs >= best_f1_thresh).astype(int)
     cm_mat = confusion_matrix(y_test, y_pred_f1)
     cm_norm = cm_mat.astype(float) / cm_mat.sum(axis=1)[:, np.newaxis]
 
@@ -235,7 +238,7 @@ with PdfPages("Plots/XGB_Output.pdf") as pdf:
                 yticklabels=['Background', 'Proton'],
                 cbar_kws={'label': 'Fraction'})
 
-    ax_cm.set_title(f'Confusion Matrix\n@ Max F1-Score (thr={0.86})',
+    ax_cm.set_title(f'Confusion Matrix\n@ Max F1-Score (thr={best_f1_idx})',
                     color=SIG_COLOR, pad=10, fontsize=16)
     ax_cm.set_xlabel('Predicted', fontsize=16)
     ax_cm.set_ylabel('True', fontsize=16)
