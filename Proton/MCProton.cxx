@@ -152,6 +152,8 @@ void MCProton()
     TH1D *H_PrPixelTRTHits =new TH1D("PrPixelTRTHits_MCProton","PixelTRTHits",51,-1,50);
     TH1D *H_PrPixeldEdX =new TH1D("PrPixeldEdX_MCProton","PixeldEdX",100,0,2);
     TH1D *H_PrPixelSCTHits =new TH1D("PrPixelSCTHits_MCProton","PixelSCTHits",12,2.5,14.5);
+    TH2D *Pixel_dEdx_over_Mom_Hist2= new TH2D("Pixel_dEdx_over_Mom_Hist2_MCProton", "Pixel dE/dx over Momentum - ", 100,  0.95,  2.5, 100, 0, 5);
+
     
     TH1D *CountProt = new TH1D("CountProt_MCProton","CountProt",7,-0.5,6.5);
     TH1D *PerpProt = new TH1D("PerpProt_MCProton","PerpProt",100,0,3.5);
@@ -243,6 +245,7 @@ void MCProton()
                     PixelHits=TrackPixelHits[i];
                     PixelTRTHits=TrackTRTHits[i];
                     PixeldEdX=TrackPixeldEdX[i];
+                    Pixel_dEdx_over_Mom_Hist2->Fill(Proton[i].P(), TrackPixeldEdX[i]);
                     PixelSCTHits=TrackSCTHits[i];
                     if(FVariable==-1) continue;              
 
@@ -371,6 +374,7 @@ void MCProton()
     H_PrPixelHits->Write();
     H_PrPixelTRTHits->Write();
     H_PrPixeldEdX->Write();
+    Pixel_dEdx_over_Mom_Hist2->Write();
     H_PrPixelSCTHits->Write();
     CountProt->Write();
     PerpProt->Write();

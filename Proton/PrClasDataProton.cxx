@@ -86,7 +86,8 @@ void PrClasDataProton()
     TH1D *EtaProton = new TH1D("ProtonEta_PrClasDataProton","Proton #eta - ",  30, -3,  3);
     TH1D *EnergyFull = new TH1D("EnergyFull_PrClasDataProton","Energy Full - ", 30,  0,  6);
     TH1D *EnergyProton= new TH1D("ProtonEnergy_PrClasDataProton", "Proton Energy - ", 30,  0,  6);
-    TH1D *ResponseHist= new TH1D("Response_PrClasDataProton", "ML Response - ", 30,  0,  1);
+    TH1D *ResponseElectronAlgorithmHist= new TH1D("ResponseElectronAlgorithm_MCtestProtonAlgorithm", "ML Response Electron Algorithm - ", 30,  0,  1);
+    TH1D *ResponseProtonAlogirthmHist= new TH1D("ResponseProtonAlgorithm_MCtestProtonAlgorithm", "ML Response Proton Algorithm - ", 30,  0,  1);
 
 
 
@@ -123,8 +124,8 @@ void PrClasDataProton()
     TTreeReaderArray<float>        TopoCluEMProb(tree_reader, "topo_cluster_EM_prob");
     TTreeReaderArray<bool>         TopoCluPass(tree_reader,   "topo_cluster_pass_sig_cut");
 
-    int   eventID = 0;
-    float protoncount = 0, diffrentparticle = 0;
+    int   eventID = 0 ;
+    float protoncount = 0, diffrentparticle = 0, noTopocluster=0;
     float zeroparticle = 0, oneparticle = 0, twoparticle = 0, allparticles = 0;
 
     while (tree_reader.Next()) {
@@ -147,8 +148,8 @@ void PrClasDataProton()
 
             if (dipartic.Perp() < 0.2 && dipartic.M() < 3.36 && dipartic.M() > 2.92) {
 
-                float probcutElectron   = 0.5;
-                float probcutProton   = 0.8;
+                float probcutElectron   = 0.65;
+                float probcutProton   = 0.5;
 
                 float responseElectron[2] = {probcutElectron, probcutElectron};
                 float responseProton[2] = {probcutProton, probcutProton};
@@ -164,54 +165,44 @@ void PrClasDataProton()
                     PixelTRTHits = TrackTRTHits[i];
                     PixeldEdX    = TrackPixeldEdX[i];
                     PixelSCTHits = TrackSCTHits[i];
-                    if (FVariable == -1) continue;
+                    if (FVariable == -1) noTopocluster++;
+                        else{
+                            std::vector<float>   input_el = {PixelHits, PixelTRTHits, PixelSCTHits,PixeldEdX,  FVariable, EMprop, Lambda, Lambda2, Radius};
+                            std::vector<int64_t> input_shape_el = {1, 9};
+                            Ort::Value input_tensor_el = Ort::Value::CreateTensor<float>(
+                                allocator.GetInfo(), input_el.data(), input_el.size(), input_shape_el.data(), input_shape_el.size());
+                            auto output_tensors2 = session2.Run(Ort::RunOptions{nullptr}, &input_name2, &input_tensor_el, 1, output_names2, 2);
+                            float* prob_ptr2 = output_tensors2[1].GetTensorMutableData<float>();
+                            responseElectron[i] = prob_ptr2[1];
+                            ResponseElectronAlgorithmHist->Fill(responseElectron[i]);
 
-                    std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,PixeldEdX,  FVariable, EMprop, Lambda, Lambda2, Radius}; 
-                    std::vector<int64_t> input_shape = {1, 9};
-                    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-                        allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
-                    auto output_tensors = session2.Run(Ort::RunOptions{nullptr}, &input_name2, &input_tensor, 1, output_names2, 2);
-                    float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
-                    responseElectron[i] = prob_ptr[1];
-                    Found++;
-                }
-                for (int i = 0; i < 2; i++) {
-                    allparticles++;
-                    Topocluster(Proton[i], TopoCluNum, TopoCluEta, TopoCluPhi, TopoCluPt,
-                        TopoCluLamda, TopoCluLamda2, TopoCluR2, TopoCluEMProb, TopoCluPass,
-                        FVariable, EMprop, Lambda2, Lambda, Radius);
 
-                    PixelHits    = TrackPixelHits[i];
-                    PixelTRTHits = TrackTRTHits[i];
-                    PixeldEdX    = TrackPixeldEdX[i];
-                    PixelSCTHits = TrackSCTHits[i];
-                    if (FVariable == -1) continue;
-
-                    std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,  FVariable, EMprop, Lambda, Lambda2, Radius}; //PixeldEdX,
-                    for (size_t i = 0; i < input.size(); i++)
-                        input[i] = (input[i] - scaler_mean[i]) / scaler_scale[i];
-                    std::vector<int64_t> input_shape = {1, 8};
-                    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-                        allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
-                    auto output_tensors = session1.Run(Ort::RunOptions{nullptr}, &input_name1, &input_tensor, 1, output_names1, 2);
-                    float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
-                    responseProton[i] = prob_ptr[1];
-                    ResponseHist->Fill(responseProton[i]);
-                    Found++;
+                            std::vector<float>   input = {PixelHits, PixelTRTHits, PixelSCTHits,  FVariable, EMprop, Lambda, Lambda2, Radius};
+                            for (size_t i = 0; i < input.size(); i++)
+                                input[i] = (input[i] - scaler_mean[i]) / scaler_scale[i];
+                            std::vector<int64_t> input_shape = {1, 8};
+                            Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
+                                allocator.GetInfo(), input.data(), input.size(), input_shape.data(), input_shape.size());
+                            auto output_tensors = session1.Run(Ort::RunOptions{nullptr}, &input_name1, &input_tensor, 1, output_names1, 2);
+                            float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
+                            responseProton[i] = prob_ptr[1];
+                            ResponseProtonAlogirthmHist->Fill(responseProton[i]);
+                            Found++;
+                        }
                 }
                 IsProton = 0;
                 int rightlepton=2;
                 if(Found==0) zeroparticle+=2;
                 else if(Found==1)
                 {
-                    if(responseElectron[0]==probcutElectron)
+                    if(responseProton[0]==probcutProton)
                     {
-                        if(responseElectron[1]<probcutElectron && responseProton[1]>probcutProton) IsProton=1;
+                        if(responseProton[1]>probcutProton && responseElectron[1]<probcutElectron) IsProton=1;
                         else Found=0;
                     } 
-                    else if(responseElectron[1]==probcutElectron)
+                    else if(responseProton[1]==probcutProton)
                     {
-                        if(responseElectron[0]<probcutElectron && responseProton[0]>probcutProton) IsProton=1;
+                        if(responseProton[0]>probcutProton && responseElectron[0]<probcutElectron) IsProton=1;
                         else Found=0;
                     } 
                     oneparticle+=2;
@@ -219,7 +210,7 @@ void PrClasDataProton()
                 else if(Found==2) 
                 {
                     twoparticle+=2;
-                    if((responseElectron[0]+responseElectron[1])/2<probcutElectron && (responseProton[0]+responseProton[1])/2>probcutProton) IsProton=1;
+                    if((responseProton[0]+responseProton[1])/2>probcutProton && (responseElectron[0]+responseElectron[1])/2<probcutElectron) IsProton=1;
                 }
 
                 //========================
@@ -245,7 +236,8 @@ void PrClasDataProton()
     cout << "===========================" << endl;
     cout << "File: " << name << endl;
     cout << "Number of events: "   << eventID     << endl;
-    cout << "Number of protons: "    << protoncount    << endl;
+    cout << "Number of protons: "    << protoncount    << " Ratio "<< protoncount / allparticles << endl;
+    cout << "Number of particles without topocluster: "<< noTopocluster <<" Ratio "<< noTopocluster / allparticles << endl;
     cout << "===========================" << endl;
     cout << "Found count:" << endl;
     cout << "  Two particles:      " << twoparticle      << "  Ratio " << twoparticle / allparticles  << endl;
@@ -265,7 +257,8 @@ void PrClasDataProton()
     EtaProton->Write();
     EnergyFull->Write();
     EnergyProton->Write();
-    ResponseHist->Write();
+    ResponseElectronAlgorithmHist->Write();
+    ResponseProtonAlogirthmHist->Write();
     outputFile->Close();
 
 }

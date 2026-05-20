@@ -156,7 +156,7 @@ void BackgroundProton()
         TH1D *H_PrPixelTRTHits =new TH1D(Form("PrPixelTRTHits_%s", name.c_str()),"PixelTRTHits",51,-1,50);
         TH1D *H_PrPixeldEdX =new TH1D(Form("PrPixeldEdX_%s", name.c_str()),"PixeldEdX",100,0,2);
         TH1D *H_PrPixelSCTHits =new TH1D(Form("PrPixelSCTHits_%s", name.c_str()),"PixelSCTHits",12,2.5,14.5);
-        
+        TH2D *Pixel_dEdx_over_Mom_Hist2= new TH2D(Form("Pixel_dEdx_over_Mom_Hist2_%s", name.c_str()), "Pixel dE/dx over Momentum - ", 100,  0.95,  2.5, 100, 0, 5);
         TH1D *CountProt = new TH1D(Form("CountProt_%s", name.c_str()),"CountProt",7,-0.5,6.5);
         TH1D *PerpProt = new TH1D(Form("PerpProt_%s", name.c_str()),"PerpProt",100,0,3.5);
         TH1D *FProt = new TH1D(Form("FProt_%s", name.c_str()),"FProt",100,0,4);
@@ -224,6 +224,8 @@ void BackgroundProton()
                         PixelHits=TrackPixelHits[i];
                         PixelTRTHits=TrackTRTHits[i];
                         PixeldEdX=TrackPixeldEdX[i];
+                        Pixel_dEdx_over_Mom_Hist2->Fill(Proton[i].P(), TrackPixeldEdX[i]);
+
                         PixelSCTHits=TrackSCTHits[i];
                         if(FVariable==-1) continue;              
 
@@ -330,6 +332,7 @@ void BackgroundProton()
         H_PrPixelHits->Write();
         H_PrPixelTRTHits->Write();
         H_PrPixeldEdX->Write();
+        Pixel_dEdx_over_Mom_Hist2->Write();
         H_PrPixelSCTHits->Write();
         CountProt->Write();
         PerpProt->Write();
