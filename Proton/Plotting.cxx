@@ -413,7 +413,7 @@ void Plotting()
         TH2D *dEdxOverMomProton = (TH2D*)DataFile->Get("Pixel_dEdx_over_Mom_Hist2");
         TCanvas *c9 = new TCanvas("c9", "c9", 800, 600);
         gPad->SetLogz(1);
-        dEdxOverMomProton->SetTitle("Pixel dE/dx over Momentum for Protons - Data;Momentum [GeV];dE/dx [?]");
+        dEdxOverMomProton->SetTitle("Pixel dE/dx over Momentum - Data;Momentum [GeV];dE/dx [?]");
         dEdxOverMomProton->Draw("COLZ");
         c9->SaveAs("Plots/EfficiencyPlots/dEdxOverMomentum_Proton.png");
         gPad->SetLogz(0);
@@ -433,7 +433,7 @@ void Plotting()
 
         TCanvas *c10 = new TCanvas("c10", "c10", 800, 600);
         gPad->SetLogz(1);
-        dEdxOverMomMCProton->SetTitle("Pixel dE/dx over Momentum for Protons - MC;Momentum [GeV];dE/dx [?]");
+        dEdxOverMomMCProton->SetTitle("Pixel dE/dx over Momentum - MC;Momentum [GeV];dE/dx [?]");
         dEdxOverMomMCProton->Draw("COLZ");
         c10->SaveAs("Plots/EfficiencyPlots/dEdxOverMomentum_Proton_MC.png");
         gPad->SetLogz(0);
