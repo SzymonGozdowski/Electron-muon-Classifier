@@ -59,6 +59,7 @@ void DataPion()
     TH1D *EnergyFull = new TH1D("EnergyFull_DataPion","Energy Full - ", 30,  0,  6);
     TH1D *EnergyPion= new TH1D("PionEnergy_DataPion", "Pion Energy - ", 30,  0,  6);
     TH1D *Pixel_dEdx_Hist= new TH1D("Pixel_dEdx_DataPion", "Pixel dE/dx - ", 30,  0,  3);
+    TH1D *Response = new TH1D("Response", "Response - ", 100,  0,  1);
 
 
     //========================
@@ -148,6 +149,7 @@ void DataPion()
                     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, &input_name, &input_tensor, 1, output_names, 2);
                     float* prob_ptr = output_tensors[1].GetTensorMutableData<float>();
                     response[i] = prob_ptr[1];
+                    Response->Fill(response[i]);
                     Found++;
                 }
 
@@ -223,6 +225,7 @@ void DataPion()
     EnergyFull->Write();
     EnergyPion->Write();
     Pixel_dEdx_Hist->Write();
+    Response->Write();
     outputFile->Close();
 
 }
