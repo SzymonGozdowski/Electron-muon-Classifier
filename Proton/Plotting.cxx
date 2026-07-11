@@ -42,7 +42,7 @@ void Plotting()
 
     
     //Plotting J/Psi mass Contol Plots
-        /*
+        
         TH1D *DiMassDataProton = (TH1D*)DataFile->Get("DiMassProton_DataProton");
         TH1D *DiMassMCProton = (TH1D*)MCProtonFile->Get("Dimass_MCProton");
         TH1D *DiMassBackgroundJpsi = (TH1D*)BackgroundJpsiFile->Get("Dimass_Background_Jpsi_EE");
@@ -190,14 +190,16 @@ void Plotting()
 
 
         c4->SaveAs("Plots/MassPlots/DataProton_Fit.png");
+        c4->SaveAs("Plots/MassPlots/DataProton_Fit.root");
+
         cout<<"========================="<<endl;
         cout<<"Background Area: "<<FunDataBkg->Integral(2.92, 3.36)<<endl;
         cout<<"Signal Area: "<<FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36)<<endl;
         cout<<"Area Ratio (Background/Signal): "<<FunDataBkg->Integral(2.92, 3.36)/(FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36))<<endl;
         cout<<"========================="<<endl;
-        */ 
-    //Plotting J/Psi mass Contol Proton Algorithm Plots
         
+    //Plotting J/Psi mass Contol Proton Algorithm Plots
+      /*  
         TH1D *DiMassDataProton = (TH1D*)DataFileAlgorithm->Get("DiMassProton_PrClasDataProton");
         TH1D *DiMassMCProton = (TH1D*)MCtestProtonAlgorithm->Get("DiMassProtonAfterAlgorithm_MCtestProtonAlgorithm");
         TH1D *DiMassBackgroundJpsi = (TH1D*)BackgroundJpsiFileAlgorithm->Get("DiMassProtonAfterAlgorithm_MCtestProtonAlgorithm");
@@ -351,7 +353,7 @@ void Plotting()
         cout<<"Area Ratio (Background/Signal): "<<FunDataBkg->Integral(2.92, 3.36)/(FunData->Integral(2.92, 3.36)-FunDataBkg->Integral(2.92, 3.36))<<endl;
         cout<<"========================="<<endl;
         
-
+        */
 
     //Plotting Efficiency Control Plots
         
